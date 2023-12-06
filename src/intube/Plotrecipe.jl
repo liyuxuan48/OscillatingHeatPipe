@@ -123,7 +123,7 @@ end
     if plain == false
 
         annotation := [(-0.052+adjust, -0.028, "dry vapor"),(-0.01+0.007+adjust, -0.028, "vapor with film"),
-        (0.04+0.002+adjust, -0.028, "liquid"),(0.0, 0.028, string("time = ", round(tube_hist_t[i], digits=2), "[s]"))]
+        (0.04+0.002+adjust, -0.028, "liquid"),(0.0, 0.03, string("time = ", round(tube_hist_t[i], digits=2), "[s]"))]
 
         @series begin
             # annotation := (0, 0, "Look up!")
@@ -144,7 +144,7 @@ end
             [0.03+adjust],[-0.028]
         end
     else
-        annotation := [(0.0, 0.028, string(round(tube_hist_t[i], digits=2), "[s]"))]
+        annotation := [(0.0, 0.03, string("time = ", round(tube_hist_t[i], digits=2), "[s]"))]
     end
     
     ohp
@@ -186,7 +186,7 @@ end
     ylimit --> grid.xlim[2]
 
     annotation := [(-0.03, -0.028, "low pressure"),
-    (0.04, -0.028, "high pressure"),(0.0, 0.028, string("time = ", round(tube_hist_t[i], digits=2), "[s]"))]
+    (0.04, -0.028, "high pressure"),(0.0, 0.03, string("time = ", round(tube_hist_t[i], digits=2), "[s]"))]
 
     @series begin
         # annotation := (0, 0, "Look up!")
@@ -251,7 +251,7 @@ end
     xlimit --> grid.xlim[1]
     ylimit --> grid.xlim[2]
 
-    annotation := [(0.0, -0.028, string("ΔT > critical value ",round(ΔTmin, digits=3), "[K]")),(0.0, 0.028, string("time = ", round(tube_hist_t[i], digits=2), "[s]"))]
+    annotation := [(0.0, -0.028, string("ΔT > critical value ",round(ΔTmin, digits=3), "[K]")),(0.0, 0.03, string("time = ", round(tube_hist_t[i], digits=2), "[s]"))]
 
     # @series begin
     #     # annotation := (0, 0, "Look up!")
@@ -300,7 +300,7 @@ end
 #     xlimit = (0.0,SimuResult.tube_hist_t[end])
     
     
-    label := string.("RTD", label_for_plotting')
+    label := string.("RTD", label_for_plotting', " exp")
     
     RTDt,RTD_T[:,label_for_plotting] .- RTD_T[1,label_for_plotting]'
 end
