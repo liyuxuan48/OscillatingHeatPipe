@@ -3,8 +3,10 @@ module OscillatingHeatPipe
 export inches,gravity,expfileDict
 
 using Reexport
+using Revise
 
 @reexport using ComputationalHeatTransfer
+import RigidBodyTools: arccoord,arclength
 
 const inches = 2.54e-2; 
 const gravity = 9.8;

@@ -3,7 +3,7 @@ export merging_affect!,merging_condition,nucleateboiling,merging
 function merging_affect!(integrator)
 
     p = getcurrentsys(integrator.u,integrator.p);
-    δv = 0.8*p.wall.L_newbubble
+    δv = 0.5*p.wall.L_newbubble
 
     merge_flags = getmerge_flags(δv,p)
     indexmergingsite = sort(findall(x->x == true, merge_flags),rev = true)
@@ -51,15 +51,16 @@ end
 
 function merging(p,i)
 
-        # get the liquid interface velocities and lengthes for merging
+    closedornot = p.tube.closedornot
+
+    # get the liquid interface velocities and lengthes for merging
     Lliquidslug = XptoLliquidslug(p.liquid.Xp,p.tube.L)
-    Lvaporplug =    XptoLvaporplug(p.liquid.Xp,p.tube.L,p.tube.closedornot)
+    Lvaporplug  = XptoLvaporplug(p.liquid.Xp,p.tube.L,p.tube.closedornot)
 
+    numofliquidslug = length(Lliquidslug)
+    numofvaporbubble = length(Lvaporplug)
 
-# get compensated L of merged liquid slug for mass conservation
-    left_index = i > 1 ? i-1 : length(Lvaporplug)
-    right_index = i < length(Lvaporplug) ? i+1 : 1
-  
+     
     L = p.tube.L
     Ac = p.tube.Ac
     ρₗ = p.liquid.ρ
@@ -67,90 +68,119 @@ function merging(p,i)
     Mvapor = getMvapor(p)
     Mfilm = getMfilm(p);
 
-    # Msection_before = Mvapor[left_index] + Mvapor[i] + Mvapor[i+1] + Mfilm[1][i] + Mfilm[2][i] + Mfilm[1][i] + Mfilm[2][i]
-
     @unpack PtoD = p.tube
-    Linsert = (Mvapor[i] + Mfilm[1][i] + Mfilm[2][i] - 0.5 .* Ac .* Lvaporplug[i] .* (PtoD(p.vapor.P[left_index]) .+ PtoD(p.vapor.P[right_index]))) ./ (ρₗ .* Ac .- 0.5 .* Ac .* (PtoD(p.vapor.P[left_index]) .+ PtoD(p.vapor.P[right_index])))
-    # println(Linsert)
-    # Linsert = (Mvapor[i] + Mfilm[1][i] + Mfilm[2][i] - Lvaporplug[i] * p.tube.Ac * PtoD(p.vapor.P[i])) ./ p.tube.Ac ./ p.liquid.ρ
-    
-    Xpnewone = mod(p.liquid.Xp[left_index][1]+Lvaporplug[i]/2 - Linsert/2,L), mod(p.liquid.Xp[i][end] - Lvaporplug[i]/2 + Linsert/2,L)
 
-    dXdtnewonevalue = (i != 1) ? (p.liquid.dXdt[i-1][1]*Lliquidslug[i-1] + p.liquid.dXdt[i][end]*Lliquidslug[i])/(Lliquidslug[i-1]+Lliquidslug[i]) : (p.liquid.dXdt[end][1]*Lliquidslug[end] + p.liquid.dXdt[i][end]*Lliquidslug[i])/(Lliquidslug[end]+Lliquidslug[i])
-        #    println("hahaha")
+    # get compensated L of merged liquid slug for mass conservation
+    if closedornot == true
+        left_index = i > 1 ? i-1 : length(Lvaporplug)
+        right_index = i < length(Lvaporplug) ? i+1 : 1
+        liquid_right_i = i #  operating liquid i
+        liquid_left_i = left_index
 
-        systemp = deepcopy(p)
+        splice_liquid_i_1 = i > 1 ? left_index : numofliquidslug
+        splice_liquid_i_2 = i > 1 ? left_index : 1
+        insert_i_1 = i > 1 ? left_index : numofliquidslug-1
 
-
-    if i != 1
-        splice!(systemp.liquid.Xp,i-1:i,[Xpnewone])
     else
-        splice!(systemp.liquid.Xp,length(systemp.liquid.Xp));
-        splice!(systemp.liquid.Xp,1);
-        insert!(systemp.liquid.Xp,length(systemp.liquid.Xp)+1,Xpnewone)
+        left_index = i-1
+        right_index = i+1
+        liquid_right_i = i+1 #  operating liquid i
+        liquid_left_i = i
+
+        splice_liquid_i_1 = i
+        splice_liquid_i_2 = i
+        insert_i_1 = i
+
+   
+    end
+ 
+
+  
+    if closedornot == false && i == 1
+        Linsert = (Mvapor[i] + Mfilm[1][i] + Mfilm[2][i] - 0.5 .* Ac .* Lvaporplug[i] .* (PtoD(p.vapor.P[right_index]))) ./ (ρₗ .* Ac .- 0.5 .* Ac .* (PtoD(p.vapor.P[right_index])))
+        Xpnewone = (p.liquid.Xp[liquid_left_i][1], p.liquid.Xp[liquid_right_i][end] - Lvaporplug[i] + Linsert)
+        dXdtnewonevalue = 0.0
+    elseif i == numofvaporbubble
+        Linsert = (Mvapor[i] + Mfilm[1][i] + Mfilm[2][i] - 0.5 .* Ac .* Lvaporplug[i] .* (PtoD(p.vapor.P[left_index]))) ./ (ρₗ .* Ac .- 0.5 .* Ac .* (PtoD(p.vapor.P[left_index])))
+        Xpnewone = (p.liquid.Xp[liquid_left_i][1]+Lvaporplug[i] - Linsert, p.liquid.Xp[liquid_right_i][end])
+        dXdtnewonevalue = 0.0
+    else
+        Linsert = (Mvapor[i] + Mfilm[1][i] + Mfilm[2][i] - 0.5 .* Ac .* Lvaporplug[i] .* (PtoD(p.vapor.P[left_index]) .+ PtoD(p.vapor.P[right_index]))) ./ (ρₗ .* Ac .- 0.5 .* Ac .* (PtoD(p.vapor.P[left_index]) .+ PtoD(p.vapor.P[right_index])))
+        Xpnewone = (mod(p.liquid.Xp[liquid_left_i][1]+Lvaporplug[i]/2 - Linsert/2,L), mod(p.liquid.Xp[liquid_right_i][end] - Lvaporplug[i]/2 + Linsert/2,L))
+        dXdtnewonevalue = (p.liquid.dXdt[liquid_left_i][1]*Lliquidslug[liquid_left_i] + p.liquid.dXdt[liquid_right_i][end]*Lliquidslug[liquid_right_i])/(Lliquidslug[liquid_left_i]+Lliquidslug[liquid_right_i]) 
     end
 
-    if i != 1
-        splice!(systemp.liquid.dXdt,i-1:i,[(dXdtnewonevalue,dXdtnewonevalue)])
-    else
-        splice!(systemp.liquid.dXdt,length(systemp.liquid.dXdt));
-        splice!(systemp.liquid.dXdt,1);
-        insert!(systemp.liquid.dXdt,length(systemp.liquid.dXdt)+1,(dXdtnewonevalue,dXdtnewonevalue))
-    end
+    # dXdtnewonevalue = (i != 1) ? (p.liquid.dXdt[i-1][1]*Lliquidslug[i-1] + p.liquid.dXdt[i][end]*Lliquidslug[i])/(Lliquidslug[i-1]+Lliquidslug[i]) : (p.liquid.dXdt[end][1]*Lliquidslug[end] + p.liquid.dXdt[i][end]*Lliquidslug[i])/(Lliquidslug[end]+Lliquidslug[i])
+    # dXdtnewonevalue = (p.liquid.dXdt[liquid_left_i][1]*Lliquidslug[liquid_left_i] + p.liquid.dXdt[liquid_right_i][end]*Lliquidslug[liquid_right_i])/(Lliquidslug[liquid_left_i]+Lliquidslug[liquid_right_i]) 
+
+    systemp = deepcopy(p)
+
+    # up to here
+
+    splice!(systemp.liquid.Xp,splice_liquid_i_1)
+    splice!(systemp.liquid.Xp,splice_liquid_i_2)
+    insert!(systemp.liquid.Xp,insert_i_1,Xpnewone)
+
+    splice!(systemp.liquid.dXdt,splice_liquid_i_1)
+    splice!(systemp.liquid.dXdt,splice_liquid_i_2)
+    insert!(systemp.liquid.dXdt,insert_i_1,(dXdtnewonevalue,dXdtnewonevalue))
+
+    # if i != 1
+    #     splice!(systemp.liquid.Xp,i-1:i,[Xpnewone])
+    # else
+    #     splice!(systemp.liquid.Xp,length(systemp.liquid.Xp));
+    #     splice!(systemp.liquid.Xp,1);
+    #     insert!(systemp.liquid.Xp,length(systemp.liquid.Xp)+1,Xpnewone)
+    # end
+
+    # if i != 1
+    #     splice!(systemp.liquid.dXdt,i-1:i,[(dXdtnewonevalue,dXdtnewonevalue)])
+    # else
+    #     splice!(systemp.liquid.dXdt,length(systemp.liquid.dXdt));
+    #     splice!(systemp.liquid.dXdt,1);
+    #     insert!(systemp.liquid.dXdt,length(systemp.liquid.dXdt)+1,(dXdtnewonevalue,dXdtnewonevalue))
+    # end
 
     splice!(systemp.vapor.δstart,i)
     splice!(systemp.vapor.δend,i)
     splice!(systemp.vapor.Lfilm_start,i)
     splice!(systemp.vapor.Lfilm_end,i)
-    # splice!(systemp.vapor.Eratio,i)
     splice!(systemp.vapor.P,i)
 
-    # N = (i != 1) ? length([sys.liquid.Xarrays[i-1]; sys.liquid.Xarrays[i]]) : length([sys.liquid.Xarrays[end]; sys.liquid.Xarrays[i]])
+    # Nliquids = (i != 1) ? length([systemp.liquid.Xarrays[i-1]; systemp.liquid.Xarrays[i]]) : length([systemp.liquid.Xarrays[end]; systemp.liquid.Xarrays[i]])
+    Nliquids = length([systemp.liquid.Xarrays[liquid_left_i]; systemp.liquid.Xarrays[liquid_right_i]]) 
 
-    # N = length(p.wall.Xarray)
+    # Xarraysnewone = constructoneXarray((i != 1) ? systemp.liquid.Xp[i-1] : systemp.liquid.Xp[end],Nliquids-1,p.tube.L)
+    Xarraysnewone = constructoneXarray(systemp.liquid.Xp[insert_i_1],Nliquids-1,p.tube.L)
+    splice!(systemp.liquid.Xarrays,splice_liquid_i_1);
+    splice!(systemp.liquid.Xarrays,splice_liquid_i_2);
+    insert!(systemp.liquid.Xarrays,insert_i_1,Xarraysnewone);
 
+    # splice!(systemp.liquid.Xarrays,i);
+    # (i != 1) ? splice!(systemp.liquid.Xarrays,i-1) : splice!(systemp.liquid.Xarrays,length(systemp.liquid.Xarrays));
+    # (i != 1) ? insert!(systemp.liquid.Xarrays,i-1,Xarraysnewone) : insert!(systemp.liquid.Xarrays,length(systemp.liquid.Xarrays)+1,Xarraysnewone);
 
-    Nliquids = (i != 1) ? length([systemp.liquid.Xarrays[i-1]; systemp.liquid.Xarrays[i]]) : length([systemp.liquid.Xarrays[end]; systemp.liquid.Xarrays[i]])
-    # Nliquid = Nliquid - 1
-
-    Xarraysnewone = constructoneXarray((i != 1) ? systemp.liquid.Xp[i-1] : systemp.liquid.Xp[end],Nliquids-1,p.tube.L)
-
-    # println(length(Xarraysnewone))
-    # println(Nliquid)
-    # println(length(systemp.liquid.Xarrays[i]))
-    # println( (i != 1) ? length(systemp.liquid.Xarrays[i-1]) : length(systemp.liquid.Xarrays[end]))
-
-    splice!(systemp.liquid.Xarrays,i);
-    (i != 1) ? splice!(systemp.liquid.Xarrays,i-1) : splice!(systemp.liquid.Xarrays,length(systemp.liquid.Xarrays));
-    (i != 1) ? insert!(systemp.liquid.Xarrays,i-1,Xarraysnewone) : insert!(systemp.liquid.Xarrays,length(systemp.liquid.Xarrays)+1,Xarraysnewone);
-
-    θarraysnewone = (i != 1) ? [p.liquid.θarrays[i-1][1:end-1]; (p.liquid.θarrays[i-1][end-1]+p.liquid.θarrays[i][2])/2 ;p.liquid.θarrays[i][2:end]] : [p.liquid.θarrays[end][1:end-1]; (p.liquid.θarrays[end][end-1]+p.liquid.θarrays[i][2]) / 2 ;p.liquid.θarrays[i][2:end]]
-    splice!(systemp.liquid.θarrays,i);
-    (i != 1) ? splice!(systemp.liquid.θarrays,i-1) : splice!(systemp.liquid.θarrays,length(systemp.liquid.θarrays));
-    (i != 1) ? insert!(systemp.liquid.θarrays,i-1,θarraysnewone) : insert!(systemp.liquid.θarrays,length(systemp.liquid.θarrays)+1,θarraysnewone);
+    # θarraysnewone = (i != 1) ? [p.liquid.θarrays[i-1][1:end-1]; (p.liquid.θarrays[i-1][end-1]+p.liquid.θarrays[i][2])/2 ;p.liquid.θarrays[i][2:end]] : [p.liquid.θarrays[end][1:end-1]; (p.liquid.θarrays[end][end-1]+p.liquid.θarrays[i][2]) / 2 ;p.liquid.θarrays[i][2:end]]
+    θarraysnewone = [p.liquid.θarrays[liquid_left_i][1:end-1]; (p.liquid.θarrays[liquid_left_i][end-1]+p.liquid.θarrays[liquid_right_i][2])/2 ;p.liquid.θarrays[liquid_right_i][2:end]]
+    splice!(systemp.liquid.θarrays,splice_liquid_i_1);
+    splice!(systemp.liquid.θarrays,splice_liquid_i_2);
+    insert!(systemp.liquid.θarrays,insert_i_1,θarraysnewone);
+    
+    # splice!(systemp.liquid.θarrays,i);
+    # (i != 1) ? splice!(systemp.liquid.θarrays,i-1) : splice!(systemp.liquid.θarrays,length(systemp.liquid.θarrays));
+    # (i != 1) ? insert!(systemp.liquid.θarrays,i-1,θarraysnewone) : insert!(systemp.liquid.θarrays,length(systemp.liquid.θarrays)+1,θarraysnewone);
 
     return deepcopy(systemp)
 end
 
 function getmerge_flags(δv,sys)
 
-    # only for closed loop tube
-    numofliquidslug = length(sys.liquid.Xp)
-    numofmergingsite = numofliquidslug
-
-  
-
+    Xpvapor = getXpvapor(sys.liquid.Xp,sys.tube.L,sys.tube.closedornot)
+    numofmergingsite = length(Xpvapor)
     merge_flags = Array{Bool,1}(undef, numofmergingsite)
 
-    Xpvapor = getXpvapor(sys.liquid.Xp,sys.tube.L,sys.tube.closedornot)
-    # dXdt = sys.liquid.dXdt
-    # tstep = Main.tstep
-
     for i in 1:numofmergingsite
-        # left_index = i > 1 ? i-1 : numofliquidslug
-     # merging bubble length threshold
-        merge_flags[i] = mod(Xpvapor[i][2] - Xpvapor[i][1],sys.tube.L) < δv 
-    
+        merge_flags[i] = sys.tube.closedornot ? (mod(Xpvapor[i][2] - Xpvapor[i][1],sys.tube.L) < δv) : ((Xpvapor[i][2] - Xpvapor[i][1]) < δv)
     end
 
     return merge_flags

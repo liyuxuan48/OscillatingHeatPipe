@@ -23,7 +23,9 @@ function getcurrentsys!(u,sys0)
 
     Xp,dXdt,M,δstart,δend,Lfilm_start,Lfilm_end = vectoXMδL(u[1:indexes[1]-1])
 
-    modX!(Xp,sys0.tube.L)
+    if sys0.tube.closedornot == true 
+        modX!(Xp,sys0.tube.L)
+    end
    
     for i = 1:length(indexes)-1
     push!(θliquidrec, u[indexes[i]+1:indexes[i+1]-1])
@@ -40,6 +42,10 @@ function getcurrentsys!(u,sys0)
 
     volume_vapor = Lvaporplug .* Ac - Lfilm_start .* δarea_start - Lfilm_end .* δarea_end
     ρ = M ./ volume_vapor
+
+    # println(Lvaporplug)
+    # println(Lfilm_start)
+    # println(Lfilm_end)
 
     @unpack DtoP = sys0.tube
     P = DtoP.(ρ)

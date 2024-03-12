@@ -27,7 +27,7 @@ mutable struct OHPTwall end
     ylim = SimuResult.grid.xlim[2]
 
     ohp = SimuResult.integrator_plate.p.qline[1].body # one body only for now:)
-    
+    closedornot := SimuResult.integrator_tube.p.tube.closedornot
 
     xlabel --> "x [m]"
     ylabel --> "y [m]"
@@ -47,7 +47,7 @@ mutable struct OHPTwall end
 end
 
 @recipe function f(::OHPTemp, i::Int64, SimuResult::SimulationResult; plain=false)
-    grid = SimuResult.grid
+    grid = SimuResult.integrator_plate.p.base_cache.g
     plate_T = SimuResult.plate_T_hist[i]
     tube_hist_t = SimuResult.tube_hist_t
 
@@ -91,6 +91,7 @@ end
     
     tube_sys = getcurrentsys!(SimuResult.tube_hist_u[i],SimuResult.integrator_tube.p)
     # tube_sys.wall.θarray = deepcopy(temperature_linesource(SimuResult.integrator_plate))
+    closedornot := SimuResult.integrator_tube.p.tube.closedornot
     
     tube_hist_t = SimuResult.tube_hist_t
     
@@ -101,8 +102,11 @@ end
     # Htmp = sys_to_Harray(tube_sys)
     # Htmp_marker = round.(div.(Htmp,Hₗ-1e-10))
     
-    grid = SimuResult.grid
-    ohp = SimuResult.integrator_plate.p.qline[1].body
+    # grid = SimuResult.grid
+    grid = SimuResult.integrator_plate.p.base_cache.g
+    # ohp = SimuResult.integrator_plate.p.qline[1].body
+    ohp_model = SimuResult.integrator_plate.p.forcing["heating models"][end]
+    ohp = ohp_model.transform(ohp_model.shape)
     
     # seriestype --> :heatmap
     xlabel --> "x [m]"
@@ -623,14 +627,33 @@ end
 #     return val
 # end
 
-@recipe function f(val::PrescribedHeatFluxRegion)
-            fillcolor := :red
-            alpha     := 0.5
-            return val.body
-end
+# @recipe function f(val::PrescribedHeatFluxRegion)
+#             fillcolor := :red
+#             alpha     := 0.5
+#             return val.body
+# end
 
-@recipe function f(val::PrescribedHeatModelRegion)
-    fillcolor := :navyblue
-    alpha     := 0.5
-    return val.body
+# @recipe function f(val::PrescribedHeatModelRegion)
+#     fillcolor := :navyblue
+#     alpha     := 0.5
+#     return val.body
+# end
+
+@recipe function f(ohp::BasicBody;closedornot=NaN)
+    #print(closedornot)
+
+    legend := false
+    label := false
+    if(closedornot==true)
+        color --> :blue # change default plot settings
+        ohp_copy=deepcopy(ohp)
+        push!(ohp_copy.x,ohp_copy.x[1])
+        push!(ohp_copy.y,ohp_copy.y[1])
+        return ohp_copy.x, ohp_copy.y
+        
+    elseif(closedornot==false)
+            color --> :red
+            return ohp.x, ohp.y
+    else return error("need to specify closedornot")
+    end   
 end

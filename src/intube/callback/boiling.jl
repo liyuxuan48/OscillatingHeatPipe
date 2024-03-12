@@ -195,23 +195,6 @@ function nucleateboiling(sys,Xvapornew,Pinsert)
 
     sysnew.liquid.Xarrays = Xarraysnew
     sysnew.liquid.θarrays = θarraysnew
-        # Lfilm_start_new[index+1] = (Ac*Lliquid_adjust*ρₗ  + Mvapor_old + Mfilm_old - Mvapor_new - Mfilm_new) ./ ρₗ ./ getδarea(Ac,d,δdeposit) ./ 2
-        # Lfilm_end_new[index+1] = Lfilm_start_new[index+1]
-
-        # if Lfilm_start_new[index+1] < 0
-        #     Lfilm_start_new[index+1] = 5e-5
-        #     Lfilm_end_new[index+1] = Lfilm_start_new[index+1]
-        #     println("new film length smaller than zero. potential error!")
-        # end
-
-    # sysnew.vapor.Lfilm_start = Lfilm_start_new
-    # sysnew.vapor.Lfilm_end = Lfilm_end_new
-    # Lvaporplug = XptoLvaporplug(sysnew.liquid.Xp,sysnew.tube.L,sysnew.tube.closedornot)
-    # Lpurevapor = Lvaporplug .- Lfilm_start_new .- Lfilm_end_new
-    # Lliquidslug = XptoLliquidslug(Xpnew,sys.tube.L)
-    # println(Lliquidslug[index])
-    # println(Lliquidslug[index+1])
-    # println(p.liquid.Xp)
 
     θ_interp_walltoliquid, θ_interp_liquidtowall, H_interp_liquidtowall, P_interp_liquidtowall = sys_interpolation(sysnew)
     heightg_interp = sysnew.mapping.heightg_interp

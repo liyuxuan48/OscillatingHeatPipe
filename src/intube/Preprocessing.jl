@@ -1,4 +1,4 @@
-export SimulationResult,onesideXp,randomXp,L_to_boiltime,initialize_ohpsys,store!
+export SimulationResult,onesideXp,randomXp,L_to_boiltime,initialize_ohpsys,store!,newstate
 
 using Interpolations
 
@@ -34,6 +34,7 @@ function randomXp(tube::Tube;numofslugs=30,chargeratio=0.46,σ_charge=0.1)
 
     L = tube.L
     Lmin = tube.d
+    closedornot = tube.closedornot
 
     σ_persection = σ_charge*L/sqrt(numofslugs)
 
@@ -46,18 +47,31 @@ function randomXp(tube::Tube;numofslugs=30,chargeratio=0.46,σ_charge=0.1)
     Xp2s = deepcopy(Xp1s);
 
     if minimum(Ls) > Lmin && maximum(Ls) < L_persection
+        if closedornot == true
 
-        for i in eachindex(Xp1s)
-            Xp1s[i] = (i-1)*L_persection
-            Xp2s[i] = Xp1s[i] + Ls[i]
+            for i in eachindex(Xp1s)
+                Xp1s[i] = (i-1)*L_persection
+                Xp2s[i] = Xp1s[i] + Ls[i]
+            end
+
+            displacement = L*rand()
+
+            Xp1s = mod.(Xp1s.+displacement,L)
+            Xp2s = mod.(Xp2s.+displacement,L)
+
+        # add openloop(starting from 0 for simplicity for now)
+        elseif closedornot == false && numofslugs != 1
+            for i in eachindex(Xp1s[1:end-1])
+                Xp1s[i] = (i-1)*L_persection
+                Xp2s[i] = Xp1s[i] + Ls[i]
+            end
+            Xp2s[end] = L
+            Xp1s[end] = Xp2s[end] - Ls[end]
+
+            displacement = 0.0
         end
 
-        displacement = L*rand()
-
-        Xp1s = mod.(Xp1s.+displacement,L)
-        Xp2s = mod.(Xp2s.+displacement,L)
-
-        else println("generation failed")
+    else println("generation failed")
     end
 
     X0 = map(tuple,Xp1s,Xp2s)
@@ -102,13 +116,14 @@ end
 #     initialize_ohpsys(fluid_type,sys,p_fluid,Tref,power)
 # end
 
-function initialize_ohpsys(sys,p_fluid,power;boil_waiting_time=1.0,Rn_boil=3e-6,inertia_f=1.3,tube_d=1e-3,tubeshape="square",g_angle=(3/2)*π,Nu=3.6,slugnum=30,film_fraction=0.3,g = 0*9.81,ηplus=0.6,ηminus=0.0,nucleatenum = 250,L_newbubble = 6e-3)
+function initialize_ohpsys(sys,p_fluid,power;closedornot=true,boil_waiting_time=1.0,Rn_boil=3e-6,inertia_f=1.3,tube_d=1e-3,tubeshape="square",g_angle=(3/2)*π,Nu=3.6,slugnum=30,film_fraction=0.3,g = 0*9.81,ηplus=0.6,ηminus=0.0,nucleatenum = 250,L_newbubble = 6e-3)
 
-    L = (sys.qline[1].arccoord[1] + sys.qline[1].arccoord[end])  # total length of the pipe when streched to a 1D pipe (an approximate here)
-    ohp = sys.qline[1]
-    @unpack x,y = ohp.body
+    ohp = sys.forcing["heating models"][end]
+    L = arccoord(ohp.shape)[end] # total length of the pipe when streched to a 1D pipe (an approximate here)
+    # ohp = sys.qline[1]
+    @unpack x,y = ohp.transform(ohp.shape)
     
-    N=numpts(ohp.body)
+    N=numpts(ohp.shape)
 
     fluid_type = p_fluid.fluid_type
     Tref = p_fluid.Tref
@@ -120,11 +135,11 @@ function initialize_ohpsys(sys,p_fluid,power;boil_waiting_time=1.0,Rn_boil=3e-6,
         # Ac = tube_d*tube_d # tube cross-sectional area
         L2D = 133.83*1e-3 # the actual length of the bended pipe in the real world
         # g_angle = 0*pi/2 # inclination g_angle 
-        closedornot = true
+        # closedornot = true
 
         if tubeshape=="square"
-                peri = tube_d*4
-                Ac = tube_d*tube_d
+            peri = tube_d*4
+            Ac = tube_d*tube_d
         elseif tubeshape=="circle"
             peri = tube_d*π
             Ac = tube_d*tube_d*π/4
@@ -143,9 +158,8 @@ function initialize_ohpsys(sys,p_fluid,power;boil_waiting_time=1.0,Rn_boil=3e-6,
         dXdt0_r = zeros(length(X0))
         dXdt0 = map(tuple,dXdt0_l,dXdt0_r);
 
-        N=numpts(ohp.body)
+        # N=numpts(ohp.body)
 
-        # println(X0)
         Xarrays,θarrays = constructXarrays(X0,N,Tref,L);
 
         liquids=Liquid(Hₗ,p_fluid.ρₗ,p_fluid.Cpₗ,p_fluid.αₗ,p_fluid.μₗ,p_fluid.σ,X0,dXdt0,Xarrays,θarrays);
@@ -153,12 +167,13 @@ function initialize_ohpsys(sys,p_fluid,power;boil_waiting_time=1.0,Rn_boil=3e-6,
         # Vapor
         # Hᵥ = 0.0 # Nusselt number 4.36
         @unpack TtoP = tube
-        P_initial = 0*zeros(length(X0)) .+ TtoP(Tref);
-        δfilm = 2e-5
-        δstart_initial = 0*zeros(length(X0)) .+ δfilm ;
-        δend_initial = 0*zeros(length(X0)) .+ δfilm ;
-
         Lvaporplug = XptoLvaporplug(X0,L,tube.closedornot)
+
+        P_initial = 0*zeros(length(Lvaporplug)) .+ TtoP(Tref);
+        δfilm = 2e-5
+        δstart_initial = 0*zeros(length(Lvaporplug)) .+ δfilm ;
+        δend_initial = 0*zeros(length(Lvaporplug)) .+ δfilm ;
+
         Lfilm_start_initial =  0.5 .* film_fraction .* Lvaporplug
         Lfilm_end_initial = 0.5 .* film_fraction .* Lvaporplug
         # δmin = 2e-6
@@ -176,7 +191,7 @@ function initialize_ohpsys(sys,p_fluid,power;boil_waiting_time=1.0,Rn_boil=3e-6,
         # L_newbubble = 2tube_d
         # boil_interval = L_to_boiltime(L_newbubble,Rn,fluid_type,vapors::Vapor,tube::Tube)
         boil_interval = boil_waiting_time
-        Xwallarray,θwallarray = constructXarrays(sys.qline[1].arccoord,L,Tref);
+        Xwallarray,θwallarray = constructXarrays(arccoord(ohp.shape),L,Tref);
         θwallarray .= Tref
 
         wall = Wall(boil_interval=boil_interval,fluid_type=fluid_type,boil_type=boil_type,power=power,L_newbubble=L_newbubble,Xstations=Xstations,boiltime_stations=Xstation_time,Xarray=Xwallarray,θarray=θwallarray,Rn=Rn_boil);
@@ -241,13 +256,14 @@ mutable struct SimulationResult
     integrator_plate ::Any
     integrator_tube_resume  ::Any
     integrator_plate_resume ::Any    
-    grid             ::Any
+    # grid             ::Any
 end
 
-function SimulationResult(tube_hist_t,tube_hist_u,tube_hist_θwall,boil_hist,plate_T_hist,integrator_tube,integrator_plate,grid)
+function SimulationResult(tube_hist_t,tube_hist_u,tube_hist_θwall,boil_hist,plate_T_hist,integrator_tube,integrator_plate)
     integrator_tube_resume = deepcopy(integrator_tube)
     integrator_plate_resume = deepcopy(integrator_plate)
-    SimulationResult(tube_hist_t,tube_hist_u,tube_hist_θwall,boil_hist,plate_T_hist,integrator_tube,integrator_plate,integrator_tube_resume,integrator_plate_resume,grid)
+    SimulationResult(tube_hist_t,tube_hist_u,tube_hist_θwall,boil_hist,plate_T_hist,integrator_tube,integrator_plate,integrator_tube_resume,integrator_plate_resume)
+    # SimulationResult(tube_hist_t,tube_hist_u,tube_hist_θwall,boil_hist,plate_T_hist,integrator_tube,integrator_plate,integrator_tube_resume,integrator_plate_resume,grid)
 end
 
 function SimulationResult(int_tube,int_plate)
@@ -260,9 +276,10 @@ function SimulationResult(int_tube,int_plate)
     integrator_tube = deepcopy(int_tube)
     integrator_plate = deepcopy(int_plate)
 
-    grid = int_plate.p.grid
-    
-    return SimulationResult(tube_hist_t,tube_hist_u,tube_hist_θwall,boil_hist,plate_T_hist,integrator_tube,integrator_plate,grid)
+    # grid = int_plate.p.grid
+
+    return SimulationResult(tube_hist_t,tube_hist_u,tube_hist_θwall,boil_hist,plate_T_hist,integrator_tube,integrator_plate)
+    # return SimulationResult(tube_hist_t,tube_hist_u,tube_hist_θwall,boil_hist,plate_T_hist,integrator_tube,integrator_plate,grid)
 end
 
 function store!(sr,integrator_tube,integrator_plate)

@@ -1,6 +1,94 @@
 export constructmapping,sys_interpolation,slug_interp
 
 function sys_interpolation(sys)
+    if sys.tube.closedornot == true
+            return sys_interpolation_closedloop(sys)
+        else
+            return sys_interpolation_openloop(sys)
+    end
+end
+
+function sys_interpolation_openloop(sys)
+    X_inner = Array{Float64}(undef, 0)
+    θ_inner = Array{Float64}(undef, 0)
+    H_inner = Array{Float64}(undef, 0)
+    X_inner_pres  = Array{Float64}(undef, 0)
+    P_inner = Array{Float64}(undef, 0)
+
+    Xp  = sys.liquid.Xp
+
+    @unpack PtoT = sys.tube
+    θ = PtoT.(sys.vapor.P)
+    P = sys.vapor.P
+    δstart = sys.vapor.δstart
+    δend = sys.vapor.δend
+    Lfilm_start = sys.vapor.Lfilm_start
+    Lfilm_end = sys.vapor.Lfilm_end
+    Xpvapor = getXpvapor(Xp,sys.tube.L,sys.tube.closedornot)
+
+    H_film_start = Hfilm.(δstart,[sys])
+    H_film_end = Hfilm.(δend,[sys])
+    H_vapor = sys.vapor.Hᵥ
+    H_liquid = sys.liquid.Hₗ
+
+    Nvapor = length(P)
+
+
+    append!(X_inner,sys.liquid.Xarrays[1])
+    append!(θ_inner,sys.liquid.θarrays[1])
+    append!(H_inner,H_liquid .* ones(length(sys.liquid.Xarrays[1])))
+    append!(X_inner_pres,[Xp[1][1],Xp[1][end]])
+    append!(P_inner,[P[1], P[1]])
+
+    for i = 1:Nvapor
+
+        # vapors
+                append!(X_inner,[Xpvapor[i][1],Xpvapor[i][1]+Lfilm_start[i],
+                Xpvapor[i][1]+Lfilm_start[i],Xpvapor[i][end]-Lfilm_end[i],
+                Xpvapor[i][end]-Lfilm_end[i],Xpvapor[i][end]])
+
+                append!(θ_inner,[θ[i],θ[i],θ[i],θ[i],θ[i],θ[i]])
+                append!(H_inner,[H_film_start[i], H_film_start[i],
+                H_vapor,H_vapor,
+                H_film_end[i],H_film_end[i]])
+
+                append!(X_inner_pres,[Xpvapor[i][1],Xpvapor[i][end]])
+                append!(P_inner,[P[i], P[i]])
+    
+        # liquids
+            append!(X_inner,sys.liquid.Xarrays[i+1])
+            append!(θ_inner,sys.liquid.θarrays[i+1])
+            append!(H_inner,H_liquid .* ones(length(sys.liquid.Xarrays[i+1])))
+            append!(X_inner_pres,[Xp[i+1][1],Xp[i+1][end]])
+            append!(P_inner,[P[i], P[i]])
+        end
+
+    # ``` extend wall Xarray by adding its 0.0 point (plan to write this as a seperate function)```
+    extend_wall_Xarray = deepcopy(sys.wall.Xarray)
+    extend_wall_θarray = deepcopy(sys.wall.θarray)
+
+    extend_wall_Xarray = [0.0;sys.wall.Xarray;sys.tube.L]
+    extend_wall_θarray = [(sys.wall.θarray[1]+sys.wall.θarray[end])/2;sys.wall.θarray;(sys.wall.θarray[1]+sys.wall.θarray[end])/2]
+
+    Interpolations.deduplicate_knots!(X_inner,move_knots = true)
+    Interpolations.deduplicate_knots!(extend_wall_Xarray,move_knots = true)
+    Interpolations.deduplicate_knots!(X_inner_pres,move_knots = true)
+
+    θ_interp_liquidtowall = LinearInterpolation(X_inner, θ_inner);
+
+    H_interp_liquidtowall = LinearInterpolation(X_inner, H_inner);
+
+    θ_interp_walltoliquid = LinearInterpolation(extend_wall_Xarray, extend_wall_θarray);
+
+    P_interp_liquidtowall = LinearInterpolation(X_inner_pres, P_inner);
+
+
+    return θ_interp_walltoliquid, θ_interp_liquidtowall, H_interp_liquidtowall, P_interp_liquidtowall
+
+end
+
+
+function sys_interpolation_closedloop(sys)
     X_inner = Array{Float64}(undef, 0)
     θ_inner = Array{Float64}(undef, 0)
     H_inner = Array{Float64}(undef, 0)
@@ -142,8 +230,8 @@ function XHloop_append(i,H_film_start,H_film_end,sys)
     L = sys.tube.L
 
     if Xpvapor[2] > Xpvapor[1]
-        println("Xp error 1")
-        return "Xp error 1"
+        # println("Xp error 1")
+        return error("Xp error 1")
         
     elseif mod(Xpvapor[1],L) + Lfilm_start > L
         
@@ -195,10 +283,11 @@ end
 function slug_interp(sys::PHPSystem)
         filmLend = sys.vapor.Lfilm_end
     filmLstart = sys.vapor.Lfilm_start
-    Xpstart = [elem[1] for elem in sys.liquid.Xp]
-    Xpend = [elem[2] for elem in sys.liquid.Xp]
-    Xvaporend = Xpstart
-    Xvaporstart = [Xpend[end];Xpend[1:end-1]]
+    # Xpstart = [elem[1] for elem in sys.liquid.Xp]
+    # Xpend = [elem[2] for elem in sys.liquid.Xp]
+    Xpvapor = getXpvapor(sys.liquid.Xp,sys.tube.L,sys.tube.closedornot)
+    Xvaporend = [elem[2] for elem in Xpvapor]
+    Xvaporstart = [elem[1] for elem in Xpvapor]
     Xfilmstart = Xvaporstart .+ filmLstart
     Xfilmend = Xvaporend .- filmLend
     Xslugs = zeros(8*size(Xvaporstart)[1])

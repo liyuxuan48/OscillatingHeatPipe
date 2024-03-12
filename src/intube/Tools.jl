@@ -59,9 +59,9 @@ delta(n) = n != 0
 """
 
 function XMtovec(Xp::Array{Tuple{Float64,Float64},1},dXdt::Array{Tuple{Float64,Float64},1},M::Array{Float64,1})
-    if (length(Xp) == length(dXdt)) && (length(Xp) + 1 == length(M))
+    if (length(Xp) == length(dXdt)) && (length(Xp) - 1 == length(M))
 
-        u=zeros(5*length(Xp)+1)
+        u=zeros(5*length(Xp)-1)
 
         for i = 1:length(Xp)
 
@@ -105,7 +105,7 @@ function XMtovec(Xp::Array{Tuple{Float64,Float64},1},dXdt::Array{Tuple{Float64,F
         return u
     end
             println("the lengthes of X and dXdt and M do not match!")
-            return "error"
+            return error("the lengthes of X and dXdt and M do not match!")
 
 end
 
@@ -144,136 +144,40 @@ end
         u    ::   the dynamic portion of state vector
 """
 
-function vectoXM(u::Array{Float64,1})
-
-    if mod(length(u),5) == 1
-        maxindex = Integer( (length(u) - 1)/5 )
-
-        Xp = map(tuple, zeros(maxindex), zeros(maxindex))
-        dXdt = map(tuple, zeros(maxindex), zeros(maxindex))
-        M = zeros(maxindex+1)
-
-        for i = 1:maxindex
-
-            # input Xp
-            Xp[i] = (u[2*i-1],u[2*i])
-
-            # input dXdt
-            dXdt[i] = (u[2*maxindex + 2*i-1],u[2*maxindex + 2*i])
-        end
-
-        for i = 1:(maxindex+1)
-
-            # input M
-            M[i] = u[4*maxindex + i]
-
-        end
-
-        return Xp,dXdt,M
-    end
-
-    if mod(length(u),5) == 0
-        maxindex = div(length(u),5)
-
-        Xp = map(tuple, zeros(maxindex), zeros(maxindex))
-        dXdt = map(tuple, zeros(maxindex), zeros(maxindex))
-        M = zeros(maxindex)
-
-        for i = 1:maxindex
-
-            # input Xp
-            Xp[i] = (u[2*i-1],u[2*i])
-
-            # input dXdt
-            dXdt[i] = (u[2*maxindex + 2*i-1],u[2*maxindex + 2*i])
-        end
-
-        for i = 1:maxindex
-
-            # input M
-            M[i] = u[4*maxindex + i]
-
-        end
-
-        return Xp,dXdt,M
-    end
-
-return "error"
-
-end
-
-"""
-    This function is to transform Xp, dXdt of the interface, and M of the vapor to form our state vector u
-        u    ::   the dynamic portion of state vector
-"""
-
-function vectoXMδ(u::Array{Float64,1})
-if mod(length(u),6) == 2
-    maxindex = Integer( (length(u) - 2)/6 )
-
-    Xp = map(tuple, zeros(maxindex), zeros(maxindex))
-    dXdt = map(tuple, zeros(maxindex), zeros(maxindex))
-    M = zeros(maxindex+1)
-    δ = zeros(maxindex+1)
-
-    for i = 1:maxindex
-
-        # input Xp
-        Xp[i] = (u[2*i-1],u[2*i])
-
-        # input dXdt
-        dXdt[i] = (u[2*maxindex + 2*i-1],u[2*maxindex + 2*i])
-    end
-
-    for i = 1:(maxindex+1)
-
-        # input M
-        M[i] = u[4*maxindex + i]
-        δ[i] = u[5*maxindex + 1 + i]
-    end
-
-    return Xp,dXdt,M,δ
-end
-
-if mod(length(u),6) == 0
-    maxindex = div(length(u),6)
-
-    Xp = map(tuple, zeros(maxindex), zeros(maxindex))
-    dXdt = map(tuple, zeros(maxindex), zeros(maxindex))
-    M = zeros(maxindex)
-    δ = zeros(maxindex)
-
-    for i = 1:maxindex
-
-        # input Xp
-        Xp[i] = (u[2*i-1],u[2*i])
-
-        # input dXdt
-        dXdt[i] = (u[2*maxindex + 2*i-1],u[2*maxindex + 2*i])
-    end
-
-    for i = 1:maxindex
-
-        # input M
-        M[i] = u[4*maxindex + i]
-        δ[i] = u[5*maxindex + i]
-    end
-
-    return Xp,dXdt,M,δ
-end
-
-return "error"
-
-end
-
-"""
-    This function is to transform Xp, dXdt of the interface, and M of the vapor to form our state vector u
-        u    ::   the dynamic portion of state vector
-"""
-
 function vectoXMδL(u::Array{Float64,1})
-if mod(length(u),9) == 2
-    return "haven't finish new open end code"
+
+if mod(length(u),9) == 4
+    maxindex = div(length(u),9)
+    maxliquidindex = maxindex + 1
+
+    Xp = map(tuple, zeros(maxliquidindex), zeros(maxliquidindex))
+    dXdt = map(tuple, zeros(maxliquidindex), zeros(maxliquidindex))
+    M = zeros(maxindex)
+    δstart = zeros(maxindex)
+    δend = zeros(maxindex)
+    Lfilm_start = zeros(maxindex)
+    Lfilm_end = zeros(maxindex)
+
+    for i = 1:maxliquidindex
+
+        # input Xp
+        Xp[i] = (u[2*i-1],u[2*i])
+
+        # input dXdt
+        dXdt[i] = (u[2*maxliquidindex + 2*i-1],u[2*maxliquidindex + 2*i])
+    end
+
+    for i = 1:maxindex
+
+        # input M
+        M[i] = u[4*maxindex+4 + i]
+        δstart[i] = u[5*maxindex+4 + i]
+        δend[i] =  u[6*maxindex+4 + i]
+        Lfilm_start[i] = u[7*maxindex+4 + i]
+        Lfilm_end[i] = u[8*maxindex+4 + i]
+    end
+
+    return Xp,dXdt,M,δstart,δend,Lfilm_start,Lfilm_end
 end
 
 if mod(length(u),9) == 0
@@ -322,18 +226,17 @@ end
 function XptoLvaporplug(Xp::Vector{Tuple{Float64, Float64}},L::Float64,closedornot::Bool)
 
 if closedornot == false
-    maxindex = length(Xp) + 1
+    maxindex = length(Xp) - 1
     Lvaporplug = zeros(maxindex)
 
-    Lvaporplug[1] = Xp[1][1]-0.0
-    Lvaporplug[end] = L-Xp[end][end]
+    if maxindex > 1
+        for i = 1:maxindex
 
-    if maxindex > 2
-        for i = 2:maxindex-1
-
-            Lvaporplug[i] = Xp[i][1] - Xp[i-1][end]
+            Lvaporplug[i] = Xp[i+1][1] - Xp[i][end]
 
         end
+    else
+        return error("need more than one liquid slugs")
     end
 
     return Lvaporplug
@@ -390,28 +293,40 @@ end
 
 function getXpvapor(Xp,L,closedornot)
 
-    Xpvapor=deepcopy(Xp)
-
     if closedornot == false
-        Xpvapor[1]=(0.0,Xp[1][1])
 
-        for i = 2:(length(Xp))
-            Xpvapor[i]=(Xp[i-1][end],Xp[i][1])
+        Xpvapor = map(tuple,zeros(length(Xp)-1),zeros(length(Xp)-1))
+
+        maxindex = length(Xp) - 1
+    
+        if maxindex > 1
+            for i = 1:maxindex
+    
+                Xpvapor[i] = (Xp[i][end], Xp[i+1][1])
+    
+            end
+        else
+            return error("need more than one liquid slugs")
         end
 
-        push!(Xpvapor,(Xp[end][end],L))
+        return Xpvapor
     end
 
     if closedornot == true
+
+
+        Xpvapor = map(tuple,zeros(length(Xp)),zeros(length(Xp)))
 
         Xpvapor[1]=(Xp[end][end],Xp[1][1])
 
         for i = 2:(length(Xp))
             Xpvapor[i]=(Xp[i-1][end],Xp[i][1])
         end
+
+        return Xpvapor
     end
 
-    return Xpvapor
+    return error("closedornot is neither true nor false")
 end
 
 # function getdXdtvapor(Xp,L,closedornot)
@@ -522,11 +437,6 @@ end
 function constructoneXarray(X0::Tuple{Float64,Float64},Nliquid,L)
     Xarray=Array{Float64, 1}
 
-    # Lliquid = XptoLliquidslug([X0],L)
-
-    # Nliquid =  floor.(Int, N.*Lliquid./L)
-
-    # for i = 1:length(Xarray)
         if X0[1] < X0[2]
             Xarray = Array(range(X0[1], X0[2], length=Nliquid))
         else
@@ -560,7 +470,8 @@ function constructXarrays(L::Float64,N,θinitial)
     return(Xwallarray,θwallarray)
 end
 
-function constructXarrays(line::ScalarData{N,Float64,Array{Float64,1}},L,θinitial) where {N}
+function constructXarrays(line::Vector{Float64},L,θinitial)
+    N = length(line)
     Xwallarray = Array{Float64, 1}(undef, N)
     Xwallarray .= line
 
@@ -724,97 +635,49 @@ function filmδcorr(Ca,d)
     filmδ = d .* 0.67.*Ca.^(2/3)./(1 .+ 3.35.*Ca.^(2/3))
 end
 
-# function getAdeposit(sys)
-#     dXdt= sys.liquid.dXdt
-#     Ac= sys.tube.Ac
-#     d = sys.tube.d
-#     δ = sys.vapor.δ
-#     μₗ = sys.liquid.μₗ
-#     σ = sys.liquid.σ
-
-#     numofliquidslug = length(dXdt)
-
-#     δarea = Ac .* (1 .- ((d .- 2*δ ) ./ d) .^ 2);
-
-# # need to initialize it later on
-#     Adeposit = deepcopy(dXdt)
-
-#     Ca = getCa.(μₗ,σ,dXdt)
-#     δarea_corr = getδarea.(Ac,d,filmδcorr.(Ca,d))
-
-
-#     for i = 1:length(Adeposit)
-#         loop_index = (i != numofliquidslug) ? i+1 : 1
-#         Adeposit_left = dXdt[i][1] > 0 ? δarea_corr[i][1] : δarea[i]
-#         Adeposit_right = dXdt[i][end] < 0 ? δarea_corr[i][end] : δarea[loop_index]
-#         Adeposit[i]  =   (Adeposit_left, Adeposit_right)
-#     end
-
-#     Adeposit
-# end
-
-# function getAdeposit(sys,δdeposit)
-#     dXdt= sys.liquid.dXdt
-#     Ac= sys.tube.Ac
-#     d = sys.tube.d
-#     δ = sys.vapor.δ
-#     μₗ = sys.liquid.μₗ
-#     σ = sys.liquid.σ
-
-#     numofliquidslug = length(dXdt)
-
-#     δdepositArea = getδarea(Ac,d,δdeposit)
-
-#     δarea = Ac .* (1 .- ((d .- 2*δ ) ./ d) .^ 2);
-
-# # need to initialize it later on
-#     Adeposit = deepcopy(dXdt)
-
-
-#     for i = 1:length(Adeposit)
-#         loop_index = (i != numofliquidslug) ? i+1 : 1
-#         Adeposit_left = dXdt[i][1] > 0 ? δdepositArea : δarea[i]
-#         Adeposit_right = dXdt[i][end] < 0 ? δdepositArea : δarea[loop_index]
-#         Adeposit[i]  =   (Adeposit_left, Adeposit_right)
-#     end
-
-#     Adeposit
-# end
-
 function getAdeposit(sys,δdeposit)
     dXdt= sys.liquid.dXdt
     Ac= sys.tube.Ac
     d = sys.tube.d
+    closedornot = sys.tube.closedornot
     δstart = sys.vapor.δstart
     δend = sys.vapor.δend
 
     Nliquid = length(dXdt)
 
-    loop_plus_index = [2:Nliquid;1]
-
     # numofliquidslug = length(dXdt)
 
     δdepositArea = getδarea(Ac,d,δdeposit)
-
-
 
     δarea_start = Ac .* (1 .- ((d .- 2*δstart) ./ d) .^ 2);
     δarea_end = Ac .* (1 .- ((d .- 2*δend) ./ d) .^ 2);
     # δarea = Ac .* (1 .- ((d .- 2*δ ) ./ d) .^ 2);
 
 # need to initialize it later on
+    loop_plus_index = [2:Nliquid;1]
     Adeposit = deepcopy(dXdt)
 
-
-    for i = 1:length(Adeposit)
-        # loop_index = (i != numofliquidslug) ? i+1 : 1
+# left and right are relative for liquid
+if closedornot == true
+    for i in eachindex(Adeposit)
         Adeposit_left = dXdt[i][1] > 0 ? δdepositArea : δarea_end[i]
         Adeposit_right = dXdt[i][end] < 0 ? δdepositArea : δarea_start[loop_plus_index[i]]
 
-        # println(δarea_start)
         Adeposit[i]  =   (Adeposit_left, Adeposit_right)
     end
+else
+    Adeposit[1] =   (0.0,0.0)
+    Adeposit[end] = (0.0,0.0)
+    for i in eachindex(Adeposit[2:end-1])
+        Adeposit_left = dXdt[i][1] > 0 ? δdepositArea : δarea_end[i]
+        Adeposit_right = dXdt[i][end] < 0 ? δdepositArea : δarea_start[i+1]
 
+        Adeposit[i]  =   (Adeposit_left, Adeposit_right)
+    end
+end
+
+# println(δarea_end)
+# println(length(Adeposit))
     Adeposit
 end
 
