@@ -84,7 +84,7 @@ function L_to_boiltime(L_newbubble,Rn,fluid_type,vapor::Vapor,tube::Tube)
     @unpack TtoP,PtoT,PtoD,PtoHfg = tube
     property = SaturationFluidProperty(fluid_type,PtoT(P));
 
-    tube_d = tube.d
+    d = tube.d
     ρₗ = property.ρₗ
     Cpₗ = property.Cpₗ 
     kₗ = property.kₗ
@@ -92,7 +92,7 @@ function L_to_boiltime(L_newbubble,Rn,fluid_type,vapor::Vapor,tube::Tube)
     Hfg = PtoHfg(P)
     Tref = PtoT(P)
     ρv = PtoD(P)
-    ΔTthres = RntoΔT(Rn,Tref,fluid_type,tube_d,TtoP)
+    ΔTthres = RntoΔT(Rn,Tref,fluid_type,d,TtoP)
 
     A = (2 * (ΔTthres/Tref) * Hfg*ρv/ρₗ)^0.5
     Ja = ΔTthres*Cpₗ*ρₗ/ρv/Hfg
@@ -114,11 +114,10 @@ end
 #     initialize_ohpsys(fluid_type,sys,p_fluid,Tref,power)
 # end
 
-function initialize_ohpsys(sys,p_fluid,power;closedornot=true,boil_waiting_time=1.0,Rn_boil=3e-6,inertia_f=1.3,tube_d=1e-3,tubeshape="square",g_angle=(3/2)*π,Nu=3.6,slugnum=30,film_fraction=0.3,g = 0*9.81,ηplus=0.6,ηminus=0.0,nucleatenum = 250,L_newbubble = 6e-3)
+function initialize_ohpsys(sys,p_fluid,power;closedornot=true,boil_waiting_time=1.0,Rn_boil=3e-6,inertia_f=1.3,d=1e-3,tubeshape="square",Nu=3.6,slugnum=30,film_fraction=0.3,g = [0.0,0.0], ηplus=0.6,ηminus=0.0,nucleatenum = 250,L_newbubble = 6e-3)
 
     ohp = sys.forcing["heating models"][end]
     L = arccoord(ohp.shape)[end] # total length of the pipe when streched to a 1D pipe (an approximate here)
-    # ohp = sys.qline[1]
     @unpack x,y = ohp.transform(ohp.shape)
     
     N=numpts(ohp.shape)
@@ -126,28 +125,19 @@ function initialize_ohpsys(sys,p_fluid,power;closedornot=true,boil_waiting_time=
     fluid_type = p_fluid.fluid_type
     Tref = p_fluid.Tref
 
-    # if OHPtype == "ASETS-II OHP 1 LARGE HEATER" || "ASETS-II OHP 2 LARGE HEATER" || "ASETS-II OHP 3 LARGE HEATER" || "ASETS-II OHP 1 SMALL HEATER" || "ASETS-II OHP 2 SMALL HEATER" || "ASETS-II OHP 3 SMALL HEATER" 
-        # tube geometries
-        # tube_d = 1e-3; # tube diameter
-        # peri = 4*tube_d # Tube perimeter
-        # Ac = tube_d*tube_d # tube cross-sectional area
-        L2D = 133.83*1e-3 # the actual length of the bended pipe in the real world
-        # g_angle = 0*pi/2 # inclination g_angle 
-        # closedornot = true
-
         if tubeshape=="square"
-            peri = tube_d*4
-            Ac = tube_d*tube_d
+            peri = d*4
+            Ac = d*d
         elseif tubeshape=="circle"
-            peri = tube_d*π
-            Ac = tube_d*tube_d*π/4
+            peri = d*π
+            Ac = d*d*π/4
         end
 
-        tube = Tube(tube_d,peri,Ac,L,L2D,g_angle,gravity,closedornot,N,fluid_type);
+        tube = Tube(d,peri,Ac,L,g,closedornot,N,fluid_type);
 
         # liquid
         # Nu = 3.60
-        Hₗ = p_fluid.kₗ/tube_d * Nu # Nusselt number 3.60
+        Hₗ = p_fluid.kₗ/d * Nu # Nusselt number 3.60
 
         # line = []
         # X0,realratio = onesideXp(ohp,tube,line)
@@ -179,7 +169,7 @@ function initialize_ohpsys(sys,p_fluid,power;closedornot=true,boil_waiting_time=
         vapors=Vapor(ad_fac=inertia_f,k = p_fluid.kₗ,P=P_initial,δstart=δstart_initial,δend=δend_initial,Lfilm_start=Lfilm_start_initial,Lfilm_end=Lfilm_end_initial,Eratio_plus=ηplus,Eratio_minus=ηminus);
 
         # Wall
-        # ΔTthres = RntoΔT(Rn,Tref,fluid_type,tube_d)
+        # ΔTthres = RntoΔT(Rn,Tref,fluid_type,d)
         # nucleate_density = 0.005
         # nucleatenum = 1000
         Xstations = sort(rand(nucleatenum) .* L);
@@ -199,8 +189,8 @@ function initialize_ohpsys(sys,p_fluid,power;closedornot=true,boil_waiting_time=
 
     sys0_nomapping = PHPSystem_nomapping(tube,liquids,vapors,wall);
     θ_interp_walltoliquid, θ_interp_liquidtowall, H_interp_liquidtowall, P_interp_liquidtowall = sys_interpolation(sys0_nomapping)
-    gvec = getgvec(g,g_angle);
-    ht = getheightg(gvec,x,y);
+
+    ht = getgh(g,x,y);
     heightg_interp = LinearInterpolation(Xwallarray,ht,extrapolation_bc = Line())
     mapping = Mapping(θ_interp_walltoliquid, θ_interp_liquidtowall, H_interp_liquidtowall, P_interp_liquidtowall,heightg_interp);
 

@@ -1,4 +1,4 @@
-export PHPSystem_nomapping,PHPSystem,Tube,Evaporator,Condenser,Liquid,Vapor,Wall,Mapping,Cache
+export PHPSystem_nomapping,PHPSystem,Tube,Liquid,Vapor,Wall,Mapping,Cache
 # ,PHPResult
 
 using Parameters
@@ -9,9 +9,7 @@ Tube is a struct containing tube geometries
     peri        ::Float64   tube perimeter (may be an arbitrary shape so cannot be derived from d)
     Ac          ::Float64   tube cross-sectional area
     L           ::Float64   tube one dimensional length
-    L2D         ::Float64   tube length for each section of the tube
-    angle       ::Float64   inclination angle of the OHP
-    g           ::Float64   gravity
+    g           ::Float64   gravity vector along the plate
     closedornot ::Bool      if the tube is closed loop or not (open loop)
 """
 
@@ -20,9 +18,7 @@ mutable struct Tube
     peri::Float64
     Ac::Float64
     L::Float64
-    L2D::Float64
-    angle::Float64
-    g::Float64
+    g::Vector{Float64}
     closedornot::Bool
     N::Int64  
     fluid_type::String
@@ -33,9 +29,10 @@ mutable struct Tube
     PtoHfg
 end
 
-function Tube(tube_d,peri,Ac,L,L2D,angle,gravity,closedornot,N,fluid_type);
+function Tube(d,peri,Ac,L,gravity,closedornot,N,fluid_type);
     PtoT,TtoP,PtoD,DtoP,PtoHfg = createCoolPropinterpolation(fluid_type::String)
-    Tube(tube_d,peri,Ac,L,L2D,angle,gravity,closedornot,N,fluid_type,PtoT,TtoP,PtoD,DtoP,PtoHfg);
+    # Tube(d,peri,Ac,L,L2D,angle,gravity,closedornot,N,fluid_type,PtoT,TtoP,PtoD,DtoP,PtoHfg);
+    Tube(d,peri,Ac,L,gravity,closedornot,N,fluid_type,PtoT,TtoP,PtoD,DtoP,PtoHfg);
 end
 
 """
@@ -182,7 +179,7 @@ function Base.show(io::IO, sys::PHPSystem)
     # sdmsg = (N == 0) ? "Unbounded" : ((SD == ExternalProblem) ? "External problem" : ((SD == InternalProblem) ? "Internal problem" : "External/internal"))
     # println(io, "$sdmsg Heat conduction system on a grid of size $NX x $NY and $N $mtype immersed points")
     N = sys.tube.N
-    angle = sys.tube.angle
+    # angle = sys.tube.angle
     fluidtype = sys.tube.fluid_type
     println(io, "$N point OHP system filled with $fluidtype")
     # if N > 0

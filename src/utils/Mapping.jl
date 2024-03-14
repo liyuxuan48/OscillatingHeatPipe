@@ -273,7 +273,7 @@ function XHloop_append(i,H_film_start,H_film_end,sys)
                 H_film_end,H_film_end]
         
     else 
-        println("Xp error 1")
+        println("Xp error 2")
         return "Xp error 2"
     end
 

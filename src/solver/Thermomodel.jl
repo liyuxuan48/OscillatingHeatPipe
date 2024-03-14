@@ -7,7 +7,7 @@ function dynamicsmodel(u::Array{Float64,1},p::PHPSystem)
 
     # extracts essenstial information stored at sys::PHPSystem
     sys = p
-    @unpack d,peri,Ac,angle,g,L,closedornot = sys.tube
+    @unpack d,peri,Ac,g,L,closedornot = sys.tube
     @unpack σ,μₗ,ρ,Xp,dXdt = sys.liquid
     ρₗ = ρ
     @unpack P,Eratio_plus,Eratio_minus,δstart,δend,Lfilm_start,Lfilm_end,ad_fac = sys.vapor

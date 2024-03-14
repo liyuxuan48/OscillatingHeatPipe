@@ -22,7 +22,6 @@ function getcurrentsys!(u,sys0)
     if sys0.tube.closedornot == true 
         modX!(Xp,sys0.tube.L)
     end
-   
     for i = 1:length(indexes)-1
     push!(θliquidrec, u[indexes[i]+1:indexes[i+1]-1])
     end
@@ -72,12 +71,10 @@ function getcurrentsys(u,sys0)
 end
 
 function modX!(Xp,L)
-    for X in Xp
-        X = mod.(X,L)
+
+    for i in eachindex(Xp)
+        Xp[i] = mod.(Xp[i],L)
     end
-    # for i = 1:length(Xp)
-    #      Xp[i] = mod.(Xp[i],L)
-    # end
 
     return Xp
 end

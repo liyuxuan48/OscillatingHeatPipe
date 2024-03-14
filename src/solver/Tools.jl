@@ -1,4 +1,4 @@
-export getgvec,getheightg,delta, # get actrual heightg of the tube
+export getgvec,getgh,delta, # get actrual heightg of the tube
 XMtovec,XMδtovec,vectoXM,vectoXMδ,XMδLtovec,vectoXMδL, # transfer Xp,dXdt,M,δ to the state vector
 XptoLvaporplug,XptoLliquidslug,getXpvapor, # transfer Xp to the length of vapors, length of liquids, and Xp for vapor.
 ifamongone,ifamong,constructXarrays,
@@ -10,7 +10,7 @@ function getgvec(g0::T,g_angle::T=3/2*π) where {T<:Real}
     g = g0*[cos(g_angle),sin(g_angle)]
 end
 
-function getheightg(g::Vector{T},x::Vector{T},y::Vector{T}) where {T<:Real}
+function getgh(g::Vector{T},x::Vector{T},y::Vector{T}) where {T<:Real}
     xy = [x';y']
     vec(sum(-g .* xy,dims=1));
 end
