@@ -1,7 +1,5 @@
 export SimulationResult,onesideXp,randomXp,L_to_boiltime,initialize_ohpsys,store!,newstate
 
-using Interpolations
-
 function onesideXp(ohp,tube::Tube,line)
     
     A = line[1]

@@ -1,6 +1,3 @@
-using Statistics
-using UnPack
-
 export dMdtdynamicsmodel,dynamicsmodel_steadyfilm,wallmodel,liquidmodel,dynamicsmodel,sys_to_heatflux,sys_to_Harray,integrator_to_heatflux,integrator_to_Harray
 
 # this is a equation takes the current u and returns du/dt, p was already updated from the current u.

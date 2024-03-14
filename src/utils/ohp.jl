@@ -1,3 +1,54 @@
+export construct_oneloop_curve,construct_ohp_curve
+
+function construct_ohp_curve(OHPshape::String,Δx::Real)
+
+    if OHPshape == "ASETS"
+        ds = 1.5Δx
+        nturn = 16
+        width_ohp = 46.25*1e-3
+        length_ohp = 133.83*1e-3
+        gap = 1e-3
+        pitch = width_ohp/(2*nturn+1)
+        x0, y0 = -length_ohp/2 -2e-3, -width_ohp/2
+
+        return x, y, xf, yf = construct_ohp_curve(nturn,pitch,length_ohp,gap,ds,x0,y0,false,false,pi/2)
+    end
+
+    if OHPshape == "openloop"
+        ds = 1.5Δx
+        nturn = 16
+        width_ohp = 46.25*1e-3
+        length_ohp = 100*1e-3
+        gap = 10*1e-3
+        pitch = width_ohp/(2*nturn+1)
+        x0, y0 = -length_ohp/2 -2e-3, -width_ohp/2
+
+        return x, y, xf, yf = construct_ohp_curve_open(nturn,pitch,length_ohp,gap,ds,x0,y0,false,false,pi/2)
+    end
+
+    return error("Type wrong")
+end
+
+function construct_ohp_curve_open(nturn,pitch,height,gap,ds,x0,y0,flipx,flipy,angle)
+    rad = 0.5*pitch
+    len = height
+    x, y = Float64[], Float64[]
+    xf, yf = 0.0, -gap-rad
+    for i in 1:nturn-1
+        xi, yi, xf, yf = OscillatingHeatPipe._channel_pair(pitch,len,ds,xf,yf,false,false,0.0)
+        append!(x,xi)
+        append!(y,yi)
+    end
+       
+    xi, yi, xf, yf = _closure_open(pitch,len,gap,2*nturn*pitch,ds,xf,yf,false,false,0.0)
+    append!(x,xi)
+    append!(y,yi)
+    push!(x,xf)
+    push!(y,yf)
+    
+    OscillatingHeatPipe._transform!(x,y,x0,y0,flipx,flipy,angle)
+    x[1:end-1], y[1:end-1], x[end], y[end]
+end
 
 function construct_ohp_curve(nturn,pitch,height,gap,ds,x0,y0,flipx,flipy,angle)
     rad = 0.5*pitch
@@ -84,6 +135,25 @@ function _transform!(x,y,x0,y0,flipx,flipy,angle)
     push!(x,xf)
     push!(y,yf)
     _transform!(x,y,x0,y0,flipx,flipy,angle)
+    x[1:end-1], y[1:end-1], x[end], y[end]
+end
+
+
+function _closure_open(pitch,channellen,closuregap,closurelen,ds,x0,y0,flipx,flipy,angle)
+    rad = 0.5*pitch
+    x, y = Float64[], Float64[]
+    xi, yi, xf, yf = OscillatingHeatPipe._line(channellen,ds,0.0,0.0,false,false,-π/2)
+    append!(x,xi)
+    append!(y,yi)
+    xi, yi, xf, yf = OscillatingHeatPipe._halfturn(rad,ds,xf,yf,true,true,0.0)
+    append!(x,xi)
+    append!(y,yi)
+    xi, yi, xf, yf = OscillatingHeatPipe._line(channellen,ds,xf,yf,false,false,π/2)
+    append!(x,xi)
+    append!(y,yi)
+    push!(x,xf)
+    push!(y,yf)
+    OscillatingHeatPipe._transform!(x,y,x0,y0,flipx,flipy,angle)
     x[1:end-1], y[1:end-1], x[end], y[end]
 end
 

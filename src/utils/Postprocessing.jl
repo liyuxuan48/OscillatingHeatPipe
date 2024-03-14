@@ -1,10 +1,6 @@
 export getcurrentsys!,getcurrentsys,getRTD,getconfig,getghist,getthist,getgt,getsysfinal,getwetness,getV,getδ,getHtmp_marker,
 translateOHPdata,getTcurve,oneDtwoDtransform,get_boil_matrix,get1DTandP
 
-using Statistics
-using SparseArrays 
-# using Interpolations
-
 """
     give a new u and an old system, return a new system sysnew
 """
@@ -76,9 +72,12 @@ function getcurrentsys(u,sys0)
 end
 
 function modX!(Xp,L)
-    for i = 1:length(Xp)
-         Xp[i] = mod.(Xp[i],L)
+    for X in Xp
+        X = mod.(X,L)
     end
+    # for i = 1:length(Xp)
+    #      Xp[i] = mod.(Xp[i],L)
+    # end
 
     return Xp
 end

@@ -1,7 +1,6 @@
-export OHP,OHPTemp,OHPSlug,OHPPres,OHPSuper,OHPTexp,OHPTcurve,OHPCond,OHPV,OHP1DT,OHP1DP,OHP1DΔT,OHPTwall
+import Plots: mm,palette
 
-using RecipesBase
-using Plots
+export OHP,OHPTemp,OHPSlug,OHPPres,OHPSuper,OHPTexp,OHPTcurve,OHPCond,OHPV,OHP1DT,OHP1DP,OHP1DΔT,OHPTwall
 
 mutable struct OHP end
 
@@ -38,9 +37,6 @@ mutable struct OHPTwall end
     fillalpha := 0
     framestyle := :box
 
-    # color := :reds
-
-    # linecolor := :blue
     linecolor := palette([:blue,:red], 2)
     
     ohp
@@ -70,7 +66,7 @@ end
         ylimit --> grid.xlim[2]
         
         colorbar_title --> "\n T[K]"
-        right_margin --> 5Plots.mm
+        right_margin --> 5mm
 
             if time != :none
             # @series begin

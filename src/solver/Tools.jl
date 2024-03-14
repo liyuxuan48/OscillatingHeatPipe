@@ -1,5 +1,3 @@
-using CartesianGrids
-
 export getgvec,getheightg,delta, # get actrual heightg of the tube
 XMtovec,XMδtovec,vectoXM,vectoXMδ,XMδLtovec,vectoXMδL, # transfer Xp,dXdt,M,δ to the state vector
 XptoLvaporplug,XptoLliquidslug,getXpvapor, # transfer Xp to the length of vapors, length of liquids, and Xp for vapor.
@@ -8,38 +6,6 @@ duliquidθtovec,duwallθtovec,liquidθtovec,wallθtovec, # transfer temperature 
 Hfilm,getδarea,getδFromδarea,getMvapor,getMfilm,getMliquid,getVolumevapor,
 getCa,filmδcorr,getAdeposit,f_churchill,Catoδ,RntoΔT
 
-
-# """
-#     This function is a sub-function of getheight. This function is to get the actural physical heightg for one interface
-#         X     ::   the location of one interface
-#         L2D   ::   the length of one bend to another bend (the length in 2D)
-#         angle ::   the inclination angle
-# """
-
-# function getoneheight(X::Float64,L2D::Float64,angle::Float64)
-
-#     oneheight = Integer(mod(div(X,L2D),2.0)) == 0 ? L2D - mod(X,L2D) : mod(X,L2D)
-
-#     return oneheight*sin(angle)
-# end
-
-# """
-#     This function is to get the actural physical heights for all interfaces
-#         Xp    ::   the locations of all interfaces
-#         L2D   ::   the length of one bend to another bend (the length in 2D)
-#         angle ::   the inclination angle
-# """
-
-# function getheight(Xp::Array{Tuple{Float64,Float64},1},L2D::Float64,angle::Float64)
-
-#     heightg=deepcopy(Xp)
-
-#     for i =1:length(Xp)
-#         heightg[i]=(getoneheight(Xp[i][1],L2D,angle), getoneheight(Xp[i][end],L2D,angle))
-#     end
-
-#     return heightg
-# end
 function getgvec(g0::T,g_angle::T=3/2*π) where {T<:Real}
     g = g0*[cos(g_angle),sin(g_angle)]
 end

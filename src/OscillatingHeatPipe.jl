@@ -2,8 +2,18 @@ module OscillatingHeatPipe
 
 export inches,gravity,expfileDict
 
+using CoolProp
+using Interpolations
+using LinearAlgebra
+using RecipesBase
+using UnPack
+using CartesianGrids
+# using Plots
+using Statistics
+using SparseArrays 
 using Reexport
 using Revise
+
 
 @reexport using ComputationalHeatTransfer
 import RigidBodyTools: arccoord,arclength
@@ -11,23 +21,24 @@ import RigidBodyTools: arccoord,arclength
 const inches = 2.54e-2; 
 const gravity = 9.8;
 
-include("intube/CoolProp.jl")
-include("intube/Systems.jl")
-include("intube/Preprocessing.jl")
-include("intube/Thermomodel.jl")
-include("intube/Tools.jl")
-include("intube/Mapping.jl")
-include("intube/Timemarching.jl")
-include("intube/Postprocessing.jl")
-include("intube/DrawingOHP.jl")
-# include("intube/FluidProperty.jl")
-include("intube/Heatercondenser.jl")
-include("intube/Plotrecipe.jl")
-include("intube/callback/boiling.jl")
-include("intube/callback/vapormerging.jl")
-include("intube/callback/liquidmerging.jl")
-include("intube/callback/fixdx.jl")
-include("intube/callback/slugbc.jl")
+include("utils/Systems.jl")
+include("utils/CoolProp.jl")
+include("utils/Preprocessing.jl")
+include("utils/Mapping.jl")
+include("utils/Postprocessing.jl")
+include("utils/ohp.jl")
+include("utils/Heatercondenser.jl")
+include("utils/Plotrecipe.jl")
+
+include("solver/Thermomodel.jl")
+include("solver/Tools.jl")
+include("solver/Timemarching.jl")
+
+include("solver/callback/boiling.jl")
+include("solver/callback/vapormerging.jl")
+include("solver/callback/liquidmerging.jl")
+include("solver/callback/fixdx.jl")
+include("solver/callback/slugbc.jl")
 
 expfileDict = Dict([
     ("O001_H002_P010","20190607_F_PD_%23013_O001_H002_P010_expA.xlsx"),

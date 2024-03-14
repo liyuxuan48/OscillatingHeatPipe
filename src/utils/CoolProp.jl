@@ -1,9 +1,4 @@
-using CoolProp
-using Interpolations
-
 export createCoolPropinterpolation,SaturationFluidProperty
-
-# fluid_type = "Butane"
 
 function createCoolPropinterpolation(fluid_type::String,numofpoints=10000)
     Tcrit = CoolProp.PropsSI("Tcrit",fluid_type);
