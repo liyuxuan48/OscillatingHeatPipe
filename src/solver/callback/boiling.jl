@@ -15,12 +15,12 @@ function boiling_affect!(integrator)
     p = deepcopy(getcurrentsys!(integrator.u,integrator.p))
 
     boil_type = p.wall.boil_type
-    fluid_type = p.tube.fluid_type
+    fluid_type = p.propconvert.fluid_type
     d = p.tube.d
     Rn = p.wall.Rn
     boil_interval = p.wall.boil_interval
 
-    @unpack PtoT,TtoP,PtoD = p.tube
+    @unpack PtoT,TtoP,PtoD = p.propconvert
     Tref = (PtoT.(maximum(p.vapor.P)) + PtoT.(minimum(p.vapor.P)))/2
 
     Δθthreshold = RntoΔT(Rn,Tref,fluid_type,d,TtoP)
@@ -322,7 +322,7 @@ end
 
 
 function getsuperheat(Xstation,sys)
-    @unpack PtoT = sys.tube
+    @unpack PtoT = sys.propconvert
     Δθ = sys.mapping.θ_interp_walltoliquid(Xstation) - PtoT(sys.mapping.P_interp_liquidtowall(Xstation))
     return Δθ
 end
@@ -380,8 +380,8 @@ function get_vapor_energy(sys0::PHPSystem)
 
     volume_vapor = Lvaporplug .* Ac - Lfilm_start .* δarea_start - Lfilm_end .* δarea_end
 
-    PtoD = sys0.tube.PtoD
-    PtoT = sys0.tube.PtoT
+    PtoD = sys0.propconvert.PtoD
+    PtoT = sys0.propconvert.PtoT
 
     M = PtoD.(P) .* volume_vapor
     

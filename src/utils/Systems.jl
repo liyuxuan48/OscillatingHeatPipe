@@ -1,4 +1,4 @@
-export PHPSystem_nomapping,PHPSystem,Tube,Liquid,Vapor,Wall,Mapping,Cache
+export PHPSystem_nomapping,PHPSystem,Tube,Liquid,Vapor,Wall,PropConvert,Mapping,Cache
 # ,PHPResult
 
 using Parameters
@@ -21,19 +21,14 @@ mutable struct Tube
     g::Vector{Float64}
     closedornot::Bool
     N::Int64  
-    fluid_type::String
-    PtoT
-    TtoP
-    PtoD
-    DtoP
-    PtoHfg
 end
 
-function Tube(d,peri,Ac,L,gravity,closedornot,N,fluid_type);
-    PtoT,TtoP,PtoD,DtoP,PtoHfg = createCoolPropinterpolation(fluid_type::String)
-    # Tube(d,peri,Ac,L,L2D,angle,gravity,closedornot,N,fluid_type,PtoT,TtoP,PtoD,DtoP,PtoHfg);
-    Tube(d,peri,Ac,L,gravity,closedornot,N,fluid_type,PtoT,TtoP,PtoD,DtoP,PtoHfg);
-end
+# function Tube(d,peri,Ac,L,gravity,closedornot,N);
+#     # PtoT,TtoP,PtoD,DtoP,PtoHfg = createCoolPropinterpolation(fluid_type::String)
+#     # Tube(d,peri,Ac,L,L2D,angle,gravity,closedornot,N,fluid_type,PtoT,TtoP,PtoD,DtoP,PtoHfg);
+#     # Tube(d,peri,Ac,L,gravity,closedornot,N,fluid_type,PtoT,TtoP,PtoD,DtoP,PtoHfg);
+#     Tube(d,peri,Ac,L,gravity,closedornot,N);
+# end
 
 """
 Liquid is a struct containing liquid properties at a ref temperature
@@ -48,6 +43,20 @@ Liquid is a struct containing liquid properties at a ref temperature
     Xarrays::Array{Array{Float64,1},1}      finite difference location points within each liquid slug
     θarrays::Array{Array{Float64,1},1}      finite difference temperature points within each liquid slug
 """
+
+struct PropConvert
+    fluid_type::String
+    PtoT
+    TtoP
+    PtoD
+    DtoP
+    PtoHfg
+end
+
+function PropConvert(fluid_type::String);
+    PtoT,TtoP,PtoD,DtoP,PtoHfg = createCoolPropinterpolation(fluid_type::String)
+    PropConvert(fluid_type,PtoT,TtoP,PtoD,DtoP,PtoHfg);
+end
 
 mutable struct Liquid
     Hₗ::Float64
@@ -155,6 +164,7 @@ mutable struct PHPSystem
     liquid  ::Liquid
     vapor   ::Vapor
     wall    ::Wall
+    propconvert :: PropConvert
     mapping ::Mapping
     cache   ::Cache
 end
@@ -172,6 +182,7 @@ mutable struct PHPSystem_nomapping
     liquid  ::Liquid
     vapor   ::Vapor
     wall    ::Wall
+    propconvert :: PropConvert
 end
 
 function Base.show(io::IO, sys::PHPSystem)
@@ -180,7 +191,7 @@ function Base.show(io::IO, sys::PHPSystem)
     # println(io, "$sdmsg Heat conduction system on a grid of size $NX x $NY and $N $mtype immersed points")
     N = sys.tube.N
     # angle = sys.tube.angle
-    fluidtype = sys.tube.fluid_type
+    fluidtype = sys.propconvert.fluid_type
     println(io, "$N point OHP system filled with $fluidtype")
     # if N > 0
     #   bdmsg = (length(sys.bodies) == 1) ? "1 body" : "$(length(sys.bodies)) bodies"

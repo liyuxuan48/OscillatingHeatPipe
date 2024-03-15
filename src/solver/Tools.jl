@@ -507,7 +507,7 @@ end
 
 function getMvapor(sys)
 
-    @unpack PtoD = sys.tube
+    @unpack PtoD = sys.propconvert
     ρᵥ = PtoD.(sys.vapor.P)
     Ac = sys.tube.Ac
     δstart = sys.vapor.δstart

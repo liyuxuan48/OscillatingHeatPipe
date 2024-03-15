@@ -1,4 +1,4 @@
-export SimulationResult,onesideXp,randomXp,L_to_boiltime,initialize_ohpsys,store!,newstate
+export SimulationResult,onesideXp,randomXp,initialize_ohpsys,store!,newstate
 
 function onesideXp(ohp,tube::Tube,line)
     
@@ -78,37 +78,37 @@ function randomXp(tube::Tube;numofslugs=30,chargeratio=0.46,σ_charge=0.1)
     X0,real_ratio
 end
 
-function L_to_boiltime(L_newbubble,Rn,fluid_type,vapor::Vapor,tube::Tube)
-    P = vapor.P[1]
+# function L_to_boiltime(L_newbubble,Rn,fluid_type,vapor::Vapor,tube::Tube)
+#     P = vapor.P[1]
 
-    @unpack TtoP,PtoT,PtoD,PtoHfg = tube
-    property = SaturationFluidProperty(fluid_type,PtoT(P));
+#     @unpack TtoP,PtoT,PtoD,PtoHfg = tube
+#     property = SaturationFluidProperty(fluid_type,PtoT(P));
 
-    d = tube.d
-    ρₗ = property.ρₗ
-    Cpₗ = property.Cpₗ 
-    kₗ = property.kₗ
+#     d = tube.d
+#     ρₗ = property.ρₗ
+#     Cpₗ = property.Cpₗ 
+#     kₗ = property.kₗ
 
-    Hfg = PtoHfg(P)
-    Tref = PtoT(P)
-    ρv = PtoD(P)
-    ΔTthres = RntoΔT(Rn,Tref,fluid_type,d,TtoP)
+#     Hfg = PtoHfg(P)
+#     Tref = PtoT(P)
+#     ρv = PtoD(P)
+#     ΔTthres = RntoΔT(Rn,Tref,fluid_type,d,TtoP)
 
-    A = (2 * (ΔTthres/Tref) * Hfg*ρv/ρₗ)^0.5
-    Ja = ΔTthres*Cpₗ*ρₗ/ρv/Hfg
-    B = (12*kₗ/pi/ρₗ/Cpₗ)^0.5 * Ja
+#     A = (2 * (ΔTthres/Tref) * Hfg*ρv/ρₗ)^0.5
+#     Ja = ΔTthres*Cpₗ*ρₗ/ρv/Hfg
+#     B = (12*kₗ/pi/ρₗ/Cpₗ)^0.5 * Ja
 
-    t = 1e-2:1e-2:1e2
-    tstar = t .* A^2 ./ B^2 
+#     t = 1e-2:1e-2:1e2
+#     tstar = t .* A^2 ./ B^2 
 
-    Rplus = 2/3 .* ((tstar .+ 1).^1.5 .- (tstar).^1.5 .- 1);
-    R = Rplus .* B^2 ./ A; 
-    L_equivalent = (4/3) .* R
+#     Rplus = 2/3 .* ((tstar .+ 1).^1.5 .- (tstar).^1.5 .- 1);
+#     R = Rplus .* B^2 ./ A; 
+#     L_equivalent = (4/3) .* R
 
-    interp_Rtot = LinearInterpolation(L_equivalent, t);
+#     interp_Rtot = LinearInterpolation(L_equivalent, t);
 
-    return interp_Rtot(L_newbubble)
-end
+#     return interp_Rtot(L_newbubble)
+# end
 
 # function initialize_ohpsys(OHPtype,fluid_type,sys,p_fluid,Tref,power)
 #     initialize_ohpsys(fluid_type,sys,p_fluid,Tref,power)
@@ -122,7 +122,6 @@ function initialize_ohpsys(sys,p_fluid,power;closedornot=true,boil_waiting_time=
     
     N=numpts(ohp.shape)
 
-    fluid_type = p_fluid.fluid_type
     Tref = p_fluid.Tref
 
         if tubeshape=="square"
@@ -133,7 +132,7 @@ function initialize_ohpsys(sys,p_fluid,power;closedornot=true,boil_waiting_time=
             Ac = d*d*π/4
         end
 
-        tube = Tube(d,peri,Ac,L,g,closedornot,N,fluid_type);
+        tube = Tube(d,peri,Ac,L,g,closedornot,N);
 
         # liquid
         # Nu = 3.60
@@ -152,9 +151,12 @@ function initialize_ohpsys(sys,p_fluid,power;closedornot=true,boil_waiting_time=
 
         liquids=Liquid(Hₗ,p_fluid.ρₗ,p_fluid.Cpₗ,p_fluid.αₗ,p_fluid.μₗ,p_fluid.σ,X0,dXdt0,Xarrays,θarrays);
 
+        # CoolProp
+        fluid_type = p_fluid.fluid_type
+        propconvert = PropConvert(fluid_type)
+
         # Vapor
-        # Hᵥ = 0.0 # Nusselt number 4.36
-        @unpack TtoP = tube
+        @unpack TtoP = propconvert
         Lvaporplug = XptoLvaporplug(X0,L,tube.closedornot)
 
         P_initial = 0*zeros(length(Lvaporplug)) .+ TtoP(Tref);
@@ -187,7 +189,7 @@ function initialize_ohpsys(sys,p_fluid,power;closedornot=true,boil_waiting_time=
 
     # end
 
-    sys0_nomapping = PHPSystem_nomapping(tube,liquids,vapors,wall);
+    sys0_nomapping = PHPSystem_nomapping(tube,liquids,vapors,wall,propconvert);
     θ_interp_walltoliquid, θ_interp_liquidtowall, H_interp_liquidtowall, P_interp_liquidtowall = sys_interpolation(sys0_nomapping)
 
     ht = getgh(g,x,y);
@@ -199,7 +201,7 @@ function initialize_ohpsys(sys,p_fluid,power;closedornot=true,boil_waiting_time=
     boil_hist_int = []
     cache = Cache(boil_hist_int,totalmass)
 
-    sys0 = PHPSystem(tube,liquids,vapors,wall,mapping,cache);
+    sys0 = PHPSystem(tube,liquids,vapors,wall,propconvert,mapping,cache);
 
     # Lvaporplug = XptoLvaporplug(X0,sys0.tube.L,sys0.tube.closedornot)
     # M = PtoD(P) .* Lvaporplug .* Ac
@@ -227,7 +229,7 @@ function newstate(sys0::PHPSystem)
 
     volume_vapor = Lvaporplug .* Ac - Lfilm_start .* δarea_start - Lfilm_end .* δarea_end
 
-    @unpack PtoD = sys0.tube
+    @unpack PtoD = sys0.propconvert
 
     M = PtoD.(P) .* volume_vapor
 

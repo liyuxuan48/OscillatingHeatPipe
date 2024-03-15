@@ -219,7 +219,7 @@ end
     
     # Twall = tube_sys.mapping.θ_interp_walltoliquid[tube_sys.wall.Xarray]
     Twall = SimuResult.tube_hist_θwall[i]
-    @unpack PtoT,TtoP = tube_sys.tube
+    @unpack PtoT,TtoP = tube_sys.propconvert
     Tsat = PtoT(tube_sys.mapping.P_interp_liquidtowall[tube_sys.wall.Xarray])
 
     ΔT = Twall - Tsat
@@ -463,7 +463,7 @@ end
     tube_sys.wall.θarray = SimuResult.tube_hist_θwall[i]
     L = tube_sys.tube.L
 
-    @unpack TtoP = tube_sys.tube
+    @unpack TtoP = tube_sys.propconvert
 
     ΔTmin = RntoΔT(SimuResult.integrator_tube.p.wall.Rn,291.2,SimuResult.integrator_tube.p.wall.fluid_type,SimuResult.integrator_tube.p.tube.d,TtoP)
 
@@ -538,7 +538,7 @@ end
             x2 = x2[1]
             y2 = y2[1]
 
-            @unpack PtoT = val.tube
+            @unpack PtoT = val.propconvert
             y2 -= PtoT(val.mapping.P_interp_liquidtowall.(x2))
 
             # y2 -= nondi_PtoT(val.mapping.P_interp_liquidtowall.(x2))
@@ -576,7 +576,7 @@ function stackXpTemp(val::PHPSystem)
     Xpvapor = getXpvapor(val.liquid.Xp,val.tube.L,val.tube.closedornot)
     # θvapor  = nondi_PtoT.(val.vapor.P)
     
-    @unpack PtoT = val.tube
+    @unpack PtoT = val.propconvert
     θvapor  = PtoT.(val.vapor.P)
     Xp = val.liquid.Xp
 

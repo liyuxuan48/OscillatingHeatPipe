@@ -27,7 +27,7 @@ end
 
 
 function getadjacentT(p::PHPSystem,i::Int64)
-    @unpack PtoT = p.tube
+    @unpack PtoT = p.propconvert
     Tfirst = PtoT(p.vapor.P[i])
 
     if p.tube.closedornot == true

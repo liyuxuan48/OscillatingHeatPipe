@@ -10,11 +10,6 @@ function vaporMergingAffect!(integrator)
     merge_flags = getVaporMergeFlags(δv,p)
     indexmergingsite = sort(findall(x->x == true, merge_flags),rev = true)
 
-    # println(indexmergingsite)
-
-    # println(length(p.liquid.Xarrays))
-
-
     for i in indexmergingsite
         p = vaporMerging(p,i)
     end
@@ -33,7 +28,7 @@ function vaporMergingAffect!(integrator)
     δarea_end = Ac .* (1 .- ((d .- 2*δend) ./ d) .^ 2);
 
     volume_vapor = Lvaporplug .* Ac - Lfilm_start .* δarea_start - Lfilm_end .* δarea_end
-    @unpack PtoD = p.tube
+    @unpack PtoD = p.propconvert
     M = PtoD.(p.vapor.P) .* volume_vapor
 
     unew=[XMδLtovec(p.liquid.Xp,p.liquid.dXdt,M,δstart,δend,Lfilm_start,Lfilm_end); liquidθtovec(p.liquid.θarrays)];
@@ -125,7 +120,7 @@ function vaporMerging(p,i)
     # println(sum(Mold))
     # println(sum(Mtemp))
 
-    @unpack PtoD = p.tube
+    @unpack PtoD = p.propconvert
     A = (Mdiff / Ac / (ρₗ - PtoD(systemp.vapor.P[right_index_after[i]])))
     B = (Lliquidslug_old[i] + p.vapor.Lfilm_end[i] + p.vapor.Lfilm_start[right_index[i]])
 

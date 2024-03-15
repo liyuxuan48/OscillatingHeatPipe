@@ -17,7 +17,7 @@ function sys_interpolation_openloop(sys)
 
     Xp  = sys.liquid.Xp
 
-    @unpack PtoT = sys.tube
+    @unpack PtoT = sys.propconvert
     θ = PtoT.(sys.vapor.P)
     P = sys.vapor.P
     δstart = sys.vapor.δstart
@@ -97,7 +97,7 @@ function sys_interpolation_closedloop(sys)
 
     Xp  = sys.liquid.Xp
 
-    @unpack PtoT = sys.tube
+    @unpack PtoT = sys.propconvert
     θ = PtoT.(sys.vapor.P)
     P = sys.vapor.P
     δstart = sys.vapor.δstart

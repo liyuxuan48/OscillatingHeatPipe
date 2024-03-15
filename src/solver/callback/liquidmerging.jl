@@ -26,7 +26,7 @@ function merging_affect!(integrator)
     δarea_end = Ac .* (1 .- ((d .- 2*δend) ./ d) .^ 2);
 
     volume_vapor = Lvaporplug .* Ac - Lfilm_start .* δarea_start - Lfilm_end .* δarea_end
-    @unpack PtoD = p.tube
+    @unpack PtoD = p.propconvert
     M = PtoD.(p.vapor.P) .* volume_vapor
 
     unew=[XMδLtovec(p.liquid.Xp,p.liquid.dXdt,M,δstart,δend,Lfilm_start,Lfilm_end); liquidθtovec(p.liquid.θarrays)];
@@ -68,7 +68,7 @@ function merging(p,i)
     Mvapor = getMvapor(p)
     Mfilm = getMfilm(p);
 
-    @unpack PtoD = p.tube
+    @unpack PtoD = p.propconvert
 
     # get compensated L of merged liquid slug for mass conservation
     if closedornot == true
