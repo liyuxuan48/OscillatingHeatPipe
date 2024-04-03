@@ -24,7 +24,7 @@ function sys_interpolation_openloop(sys)
     δend = sys.vapor.δend
     Lfilm_start = sys.vapor.Lfilm_start
     Lfilm_end = sys.vapor.Lfilm_end
-    Xpvapor = getXpvapor(Xp,sys.tube.L,sys.tube.closedornot)
+    Xpvapor = getXpvapor(Xp,sys.tube.closedornot)
 
     H_film_start = Hfilm.(δstart,[sys])
     H_film_end = Hfilm.(δend,[sys])
@@ -104,7 +104,7 @@ function sys_interpolation_closedloop(sys)
     δend = sys.vapor.δend
     Lfilm_start = sys.vapor.Lfilm_start
     Lfilm_end = sys.vapor.Lfilm_end
-    Xpvapor = getXpvapor(Xp,sys.tube.L,sys.tube.closedornot)
+    Xpvapor = getXpvapor(Xp,sys.tube.closedornot)
 
     H_film_start = Hfilm.(δstart,[sys])
     H_film_end = Hfilm.(δend,[sys])
@@ -221,7 +221,7 @@ function XHloop_append(i,H_film_start,H_film_end,sys)
 
 
     Xp = sys.liquid.Xp[i]
-    Xpvapor = getXpvapor(sys.liquid.Xp,sys.tube.L,sys.tube.closedornot)[i]
+    Xpvapor = getXpvapor(sys.liquid.Xp,sys.tube.closedornot)[i]
     Lfilm_start = sys.vapor.Lfilm_start[i]
     Lfilm_end = sys.vapor.Lfilm_end[i]
 
@@ -285,7 +285,7 @@ function slug_interp(sys::PHPSystem)
     filmLstart = sys.vapor.Lfilm_start
     # Xpstart = [elem[1] for elem in sys.liquid.Xp]
     # Xpend = [elem[2] for elem in sys.liquid.Xp]
-    Xpvapor = getXpvapor(sys.liquid.Xp,sys.tube.L,sys.tube.closedornot)
+    Xpvapor = getXpvapor(sys.liquid.Xp,sys.tube.closedornot)
     Xvaporend = [elem[2] for elem in Xpvapor]
     Xvaporstart = [elem[1] for elem in Xpvapor]
     Xfilmstart = Xvaporstart .+ filmLstart

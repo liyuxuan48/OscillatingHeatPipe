@@ -63,7 +63,7 @@ function merging(p,i)
      
     L = p.tube.L
     Ac = p.tube.Ac
-    ρₗ = p.liquid.ρ
+    ρₗ = p.liquid.ρₗ
 
     Mvapor = getMvapor(p)
     Mfilm = getMfilm(p);
@@ -175,7 +175,7 @@ end
 
 function getmerge_flags(δv,sys)
 
-    Xpvapor = getXpvapor(sys.liquid.Xp,sys.tube.L,sys.tube.closedornot)
+    Xpvapor = getXpvapor(sys.liquid.Xp,sys.tube.closedornot)
     numofmergingsite = length(Xpvapor)
     merge_flags = Array{Bool,1}(undef, numofmergingsite)
 

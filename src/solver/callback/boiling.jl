@@ -34,7 +34,7 @@ function boiling_affect!(integrator)
     b_count = 0;
     boiltime_update_flags = Bool.(zero(p.wall.boiltime_stations))
     for i = 1:length(p.wall.Xstations)
-        if ifamong(p.wall.Xstations[i], p.liquid.Xp, p.tube.L) && suitable_for_boiling(p,i) && superheat_flag[i]
+        if ifamong(p.wall.Xstations[i], p.liquid.Xp) && suitable_for_boiling(p,i) && superheat_flag[i]
                 push!(integrator.p.cache.boil_hist,[i,integrator.t]);
                 b_count += 1;
 
@@ -48,7 +48,7 @@ function boiling_affect!(integrator)
                 # println("boiling",get_vapor_energy(p)+get_liquid_energy(p))
                 boiltime_update_flags[i] = true
                 # p.wall.boiltime_stations[i] = integrator.t
-            elseif !ifamong(p.wall.Xstations[i], p.liquid.Xp, p.tube.L)
+            elseif !ifamong(p.wall.Xstations[i], p.liquid.Xp)
                 boiltime_update_flags[i] = true
                 # p.wall.boiltime_stations[i] = integrator.t
         end
@@ -84,7 +84,7 @@ function boiling_affect!(integrator)
 end
 
 function nucleateboiling(sys,Xvapornew,Pinsert)
-    ρₗ = deepcopy(sys.liquid.ρ)
+    ρₗ = deepcopy(sys.liquid.ρₗ)
     Ac = sys.tube.Ac
     d = deepcopy(sys.tube.d)
     Xp = deepcopy(sys.liquid.Xp)
@@ -180,8 +180,6 @@ function nucleateboiling(sys,Xvapornew,Pinsert)
 
         if maxvalue > L_adjust
             sysnew.liquid.Xp[maxindex] = mod.((sysnew.liquid.Xp[maxindex][1]+L_adjust,sysnew.liquid.Xp[maxindex][2]),L)
-            # sysnew.liquid.Xarrays[maxindex] = constructoneXarray(sysnew.liquid.Xp[maxindex],length(sysnew.liquid.Xarrays[maxindex]),L)
-            # println(L_adjust," +")
         else 
             maxindex = 0
             println("boiling error!")
@@ -385,14 +383,14 @@ function get_vapor_energy(sys0::PHPSystem)
 
     M = PtoD.(P) .* volume_vapor
     
-    U =  PtoT.(P) .* sys0.liquid.Cp .* volume_vapor
+    U =  PtoT.(P) .* sys0.liquid.Cpₗ .* volume_vapor
     sum(U)
 end
 
 function get_liquid_energy(sys0::PHPSystem)
     Ac = sys0.tube.Ac
-    ρ = sys0.liquid.ρ
-    Cp = sys0.liquid.Cp
+    ρ = sys0.liquid.ρₗ
+    Cp = sys0.liquid.Cpₗ
     L = sys0.tube.L
     sys0.liquid.Xarrays;
     ds_liquid = [mod(Xarray[end]-Xarray[1],L)/length(Xarray) for Xarray in sys0.liquid.Xarrays];

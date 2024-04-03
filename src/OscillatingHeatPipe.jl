@@ -1,6 +1,6 @@
 module OscillatingHeatPipe
 
-export inches,gravity,expfileDict
+export INCHES,GRAVITY,expfileDict
 
 using CoolProp
 using Interpolations
@@ -18,8 +18,9 @@ using Revise
 @reexport using ComputationalHeatTransfer
 import RigidBodyTools: arccoord,arclength
 
-const inches = 2.54e-2; 
-const gravity = 9.8;
+const INCHES = 2.54e-2; 
+const GRAVITY = 9.8;
+const SEPERATION_VAR = -1e10
 
 include("utils/Systems.jl")
 include("utils/CoolProp.jl")

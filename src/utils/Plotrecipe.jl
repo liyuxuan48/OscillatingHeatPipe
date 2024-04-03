@@ -22,10 +22,12 @@ mutable struct OHPTwall end
 # mutable struct OHP end
 
 @recipe function f(::OHP, SimuResult::SimulationResult)
-    xlim = SimuResult.grid.xlim[1]
-    ylim = SimuResult.grid.xlim[2]
+    grid = SimuResult.integrator_plate.p.base_cache.g
+    xlim = grid.xlim[1]
+    ylim = grid.xlim[2]
 
-    ohp = SimuResult.integrator_plate.p.qline[1].body # one body only for now:)
+    # ohp = SimuResult.integrator_plate.p.qline[1].body # one body only for now:)
+    ohp =  SimuResult.integrator_plate.p.forcing["heating models"][end]
     closedornot := SimuResult.integrator_tube.p.tube.closedornot
 
     xlabel --> "x [m]"
@@ -573,7 +575,7 @@ end
 end
 
 function stackXpTemp(val::PHPSystem)
-    Xpvapor = getXpvapor(val.liquid.Xp,val.tube.L,val.tube.closedornot)
+    Xpvapor = getXpvapor(val.liquid.Xp,val.tube.closedornot)
     # θvapor  = nondi_PtoT.(val.vapor.P)
     
     @unpack PtoT = val.propconvert

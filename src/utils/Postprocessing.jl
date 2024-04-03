@@ -246,7 +246,7 @@ function getTcurve(x::Vector,y::Vector,SimulationResult::SimulationResult)
     sys = SimulationResult.integrator_plate.p
     plate_T_hist = SimulationResult.plate_T_hist
     X =  VectorData(x,y);
-    H = Regularize(X,cellsize(sys),I0=origin(sys.grid))
+    H = Regularize(X,cellsize(sys),I0=origin(sys.base_cache.g))
     g = ScalarData(X);
     ghist = getghist(g,H,plate_T_hist);
     thist = SimulationResult.tube_hist_t; 

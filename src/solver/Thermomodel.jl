@@ -8,8 +8,8 @@ function dynamicsmodel(u::Array{Float64,1},p::PHPSystem)
     # extracts essenstial information stored at sys::PHPSystem
     sys = p
     @unpack d,peri,Ac,g,L,closedornot = sys.tube
-    @unpack σ,μₗ,ρ,Xp,dXdt = sys.liquid
-    ρₗ = ρ
+    @unpack σ,μₗ,ρₗ,Xp,dXdt = sys.liquid
+    # ρₗ = ρ
     @unpack P,Eratio_plus,Eratio_minus,δstart,δend,Lfilm_start,Lfilm_end,ad_fac = sys.vapor
     @unpack L_newbubble = sys.wall
 
@@ -44,7 +44,7 @@ function dynamicsmodel(u::Array{Float64,1},p::PHPSystem)
     Xp2 = [elem[2] for elem in Xp]
     heightg = map(tuple,heightg_interp(Xp1),heightg_interp(Xp2))
 
-    Xpvapor = getXpvapor(Xp,L,closedornot)
+    Xpvapor = getXpvapor(Xp,closedornot)
 
     # get differential equation factors
     lhs = ρₗ*Ac .* Lliquidslug
@@ -384,33 +384,23 @@ function dMdtdynamicsmodel(Xpvapor::Array{Tuple{Float64,Float64},1},sys::PHPSyst
 end
 
 function liquidmodel(p::PHPSystem)
-    sys = p
-    θarrays = sys.liquid.θarrays
-    # nondihv_tonondihl = 0.0046206704347650325 # temperary variable to fix different nondimensionlaization
+    @unpack θarrays,Xarrays,Hₗ,αₗ,Cpₗ,ρₗ = p.liquid
+    @unpack Ac,L,peri = p.tube
+    @unpack θ_interp_walltoliquid = p.mapping
 
     du = 0 .* θarrays
-
-    # γ = sys.vapor.γ
-    Ac = sys.tube.Ac
-
-    Hₗ = sys.liquid.Hₗ
-    peri = sys.tube.peri
-    α = sys.liquid.α
-    Cpₗ = sys.liquid.Cp
-    ρₗ = sys.liquid.ρ
 
     H_rhs = peri / (ρₗ*Cpₗ*Ac)
 
     for i in eachindex(θarrays)
         
-        xs = sys.liquid.Xarrays[i];
-        dx = mod(xs[2] - xs[1], sys.tube.L)
+        xs = Xarrays[i];
+        dx = mod(xs[end] - xs[1], L) / length(xs)
 
-        θ_wall_inter = sys.mapping.θ_interp_walltoliquid
-
-        fx = map(θ_wall_inter, xs) - θarrays[i]
-        du[i] = α .* laplacian(θarrays[i]) ./ dx ./ dx + Hₗ .* fx .* H_rhs
+        fx = map(θ_interp_walltoliquid, xs) - θarrays[i]
+        du[i] = αₗ .* laplacian(θarrays[i]) ./ dx ./ dx + Hₗ .* fx .* H_rhs
     end
+
     return du
 end
 
@@ -424,7 +414,7 @@ end
 """
 
 
-function laplacian(u)
+function laplacian(u::Vector{Float64})
     unew = zeros(size(u))
 
     dl = ones(length(u)-1)
@@ -443,34 +433,15 @@ end
 
 # q'
 function sys_to_heatflux(p::PHPSystem)
+    @unpack θarray,Xarray = p.wall
+    @unpack peri = p.tube
+    @unpack θ_interp_liquidtowall,H_interp_liquidtowall = p.mapping
 
-    sys = p
+    dθarray = map(θ_interp_liquidtowall, Xarray) .- θarray
+    Harray  = map(H_interp_liquidtowall, Xarray)
 
-    θarray = sys.wall.θarray
-    # γ = sys.vapor.γ
-    Hₗ = sys.liquid.Hₗ
-    # He = sys.evaporator.He
-    # k = sys.vapor.k
-    # δ = sys.vapor.δ
-    # Hvapor = k ./ δ
-
-    peri = sys.tube.peri
-
-    # dx = sys.wall.Xarray[2]-sys.wall.Xarray[1]
-
-    # Xarray = sys.wall.Xarray
-    θ_interp_liquidtowall = sys.mapping.θ_interp_liquidtowall
-    H_interp_liquidtowall = sys.mapping.H_interp_liquidtowall
-
-    xs =  sys.wall.Xarray
-
-    dθarray = map(θ_interp_liquidtowall, xs) .- θarray
-    Harray  = map(H_interp_liquidtowall, xs)
-
-    # qwallarray = -Harray.*dθarray
-    qwallarray = -Harray.*dθarray*peri
+    return -Harray.*dθarray*peri
 end
-
 
 function integrator_to_heatflux(inte)
     sys_to_heatflux(inte.p)

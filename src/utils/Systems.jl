@@ -13,7 +13,7 @@ Tube is a struct containing tube geometries
     closedornot ::Bool      if the tube is closed loop or not (open loop)
 """
 
-mutable struct Tube
+struct Tube
     d::Float64
     peri::Float64
     Ac::Float64
@@ -46,11 +46,11 @@ Liquid is a struct containing liquid properties at a ref temperature
 
 struct PropConvert
     fluid_type::String
-    PtoT
-    TtoP
-    PtoD
-    DtoP
-    PtoHfg
+    PtoT    :: AbstractInterpolation
+    TtoP    :: AbstractInterpolation
+    PtoD    :: AbstractInterpolation
+    DtoP    :: AbstractInterpolation
+    PtoHfg  :: AbstractInterpolation
 end
 
 function PropConvert(fluid_type::String);
@@ -60,9 +60,9 @@ end
 
 mutable struct Liquid
     Hₗ::Float64
-    ρ::Float64
-    Cp::Float64
-    α::Float64
+    ρₗ::Float64
+    Cpₗ::Float64
+    αₗ::Float64
     μₗ::Float64
     σ::Float64
     Xp::Array{Tuple{Float64,Float64},1}
@@ -83,12 +83,12 @@ end
 """
 
 @with_kw mutable struct Vapor
-    ad_fac::Float64 = 1.3
-    Hᵥ::Float64     = 0.0
+    ad_fac::Float64                 = 1.3
+    Hᵥ::Float64                     = 0.0
     k::Float64
-    δmin::Float64   = 2e-6
-    Eratio_plus::Float64 = 0.15
-    Eratio_minus::Float64 = 0.0
+    δmin::Float64                   = 2e-6
+    Eratio_plus::Float64            = 0.15
+    Eratio_minus::Float64           = 0.0
     P::Array{Float64,1}
     δstart::Array{Float64,1}
     δend::Array{Float64,1}
@@ -132,11 +132,11 @@ Mapping is a struct containing interpolation data
 # end
 
 mutable struct Mapping
-    θ_interp_walltoliquid
-    θ_interp_liquidtowall
-    H_interp_liquidtowall
-    P_interp_liquidtowall
-    heightg_interp
+    θ_interp_walltoliquid :: AbstractInterpolation
+    θ_interp_liquidtowall :: AbstractInterpolation
+    H_interp_liquidtowall :: AbstractInterpolation
+    P_interp_liquidtowall :: AbstractInterpolation
+    heightg_interp        :: AbstractInterpolation
 end
 
 """
@@ -186,15 +186,7 @@ mutable struct PHPSystem_nomapping
 end
 
 function Base.show(io::IO, sys::PHPSystem)
-    # mtype = (MT == StaticPoints) ? "static" : "moving"
-    # sdmsg = (N == 0) ? "Unbounded" : ((SD == ExternalProblem) ? "External problem" : ((SD == InternalProblem) ? "Internal problem" : "External/internal"))
-    # println(io, "$sdmsg Heat conduction system on a grid of size $NX x $NY and $N $mtype immersed points")
     N = sys.tube.N
-    # angle = sys.tube.angle
     fluidtype = sys.propconvert.fluid_type
     println(io, "$N point OHP system filled with $fluidtype")
-    # if N > 0
-    #   bdmsg = (length(sys.bodies) == 1) ? "1 body" : "$(length(sys.bodies)) bodies"
-    #   println(io, "   $bdmsg")
-    # end
 end

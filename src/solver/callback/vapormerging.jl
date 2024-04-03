@@ -50,7 +50,7 @@ end
 function vaporMerging(p,i)
 
     Ac = p.tube.Ac
-    ρₗ = p.liquid.ρ
+    ρₗ = p.liquid.ρₗ
 
     # get the total mass before merging
     Mvapor_old = getMvapor(p);
