@@ -43,7 +43,7 @@ function temperature_linesource(integrator_plate)
 end
 
 # weakly coupled alternate time marching
-function timemarching!(integrator_tube,integrator_plate,tstep::Float64,Tstart::Float64)
+function timemarching!(integrator_tube,integrator_plate,tstep::Float64)
 
     currentsys = getcurrentsys!(integrator_tube.u,integrator_tube.p)
     currentsys.wall.θarray = temperature_linesource(integrator_plate)
