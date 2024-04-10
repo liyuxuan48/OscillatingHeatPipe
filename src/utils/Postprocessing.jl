@@ -260,9 +260,12 @@ end
 
 function oneDtwoDtransform(ξ,sr::SimulationResult)
     plate_sys = sr.integrator_plate.p
-    ql = plate_sys.qline[1]
-    interp_linear_x = LinearInterpolation(ql.arccoord, ql.body.x,extrapolation_bc = Line());
-    interp_linear_y = LinearInterpolation(ql.arccoord, ql.body.y,extrapolation_bc = Line());
+    ohp = plate_sys.forcing["heating models"][end]
+
+    @unpack x,y = ohp.transform(ohp.shape)
+
+    interp_linear_x = LinearInterpolation(arccoord(ohp.shape), x,extrapolation_bc = Line());
+    interp_linear_y = LinearInterpolation(arccoord(ohp.shape), y,extrapolation_bc = Line());
 
     x2D = interp_linear_x[ξ]
     y2D = interp_linear_y[ξ];
