@@ -1,5 +1,5 @@
 export getgvec,getgh,delta, # get actrual heightg of the tube
-# XptoLvaporplug,XptoLliquidslug,getXpvapor, # transfer Xp to the length of vapors, length of liquids, and Xp for vapor.
+XptoLvaporplug,XptoLliquidslug,getXpvapor, # transfer Xp to the length of vapors, length of liquids, and Xp for vapor.
 # ifamong,constructXarrays,
 duliquidθtovec,duwallθtovec,liquidθtovec,wallθtovec, # transfer temperature field to state vector for liquid and wall.
 Hfilm,getδarea,getδFromδarea,getMvapor,getMfilm,getMliquid,getVolumevapor,
@@ -339,9 +339,8 @@ function getMvapor(sys)
     Lvaporplug = XptoLvaporplug(Xp,L,closedornot)
     Astart = getδarea(Ac,d,δstart)
     Aend = getδarea(Ac,d,δend)
-    
 
-    Mvapor = ρᵥ .* ((Ac .- Astart) .* Lfilm_start + (Ac .- Aend) .* Lfilm_end + Ac .* (Lvaporplug - Lfilm_start - Lfilm_end))
+    Mvapor = ρᵥ .* ((Ac .- Astart) .* Lfilm_start .+ (Ac .- Aend) .* Lfilm_end .+ Ac .* (Lvaporplug .- Lfilm_start .- Lfilm_end))
 
     Mvapor
 end
@@ -507,7 +506,7 @@ function systoM(sys0::PHPSystem)
     δarea_start = Ac .* (1 .- ((d .- 2*δstart) ./ d) .^ 2);
     δarea_end   = Ac .* (1 .- ((d .- 2*δend)   ./ d) .^ 2);
 
-    volume_vapor = Lvaporplug .* Ac - Lfilm_start .* δarea_start - Lfilm_end .* δarea_end
+    volume_vapor = Lvaporplug .* Ac .- Lfilm_start .* δarea_start .- Lfilm_end .* δarea_end
 
     M = PtoD.(P) .* volume_vapor
 end

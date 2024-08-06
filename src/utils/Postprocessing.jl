@@ -246,7 +246,7 @@ function getTcurve(x::Vector,y::Vector,SimulationResult::SimulationResult)
     sys = SimulationResult.integrator_plate.p
     plate_T_hist = SimulationResult.plate_T_hist
     X =  VectorData(x,y);
-    H = Regularize(X,cellsize(sys),I0=origin(sys.base_cache.g))
+    H = Regularize(X,cellsize(sys.base_cache.g),I0=origin(sys.base_cache.g))
     g = ScalarData(X);
     ghist = getghist(g,H,plate_T_hist);
     thist = SimulationResult.tube_hist_t; 
@@ -308,7 +308,7 @@ function get_boil_matrix(SimuResult::SimulationResult;boil_dt = 0.1)
     boil_data,boil_num_x,boil_num_t,t_boil,x2D_boil,y2D_boil,boil_dt
 end
 
-function get1DTandP(xsensors::Vector, SimuResult::SimulationResult)
+function get1DTandP(xsensors::AbstractVector, SimuResult::SimulationResult)
     θhist = []
     phist = []
     sysfinal = get
