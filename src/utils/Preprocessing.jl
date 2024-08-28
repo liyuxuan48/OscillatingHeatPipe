@@ -109,7 +109,7 @@ function peri_Ac(d::Float64,tubeshape::String)
     peri,Ac
 end
 
-function initialize_ohpsys(sys,p_fluid,power;closedornot=true,boil_waiting_time=1.0,Rn_boil=3e-6,inertia_f=1.3,d=1e-3,tubeshape="square",Nu=3.6,slugnum=30,δfilm_relative=0.04,film_fraction=0.3,g = [0.0,0.0], ηplus=0.6,ηminus=0.0,nucleatenum = 250,L_newbubble = 6e-3)
+function initialize_ohpsys(sys,p_fluid,power;closedornot=true,boil_waiting_time=1.0,Rn_boil=3e-6,inertia_f=1.3,d=1e-3,tubeshape="square",Nu=3.6,slugnum=30,δfilm_relative=0.04,film_fraction=0.3,g = [0.0,0.0], ηplus=0.6, ηminus=0.0, nucleatenum = 250, L_newbubble = 6e-3, ch_ratio=0.46)
 
     # unpack CoolProp Properties
     @unpack fluid_type,Tref,kₗ,ρₗ,Cpₗ,αₗ,μₗ,σ = p_fluid  
@@ -127,7 +127,7 @@ function initialize_ohpsys(sys,p_fluid,power;closedornot=true,boil_waiting_time=
 
     # Liquid
     Hₗ = p_fluid.kₗ/d * Nu # Nusselt number given
-    X0,dXdt0,realratio = randomXp(tube,numofslugs=slugnum)
+    X0,dXdt0,realratio = randomXp(tube,numofslugs=slugnum,chargeratio=ch_ratio)
     Xarrays,θarrays = constructXarrays(X0,N,Tref,L);
     
     liquids=Liquid(Hₗ,ρₗ,Cpₗ,αₗ,μₗ,σ,X0,dXdt0,Xarrays,θarrays);
