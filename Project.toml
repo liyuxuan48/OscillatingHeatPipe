@@ -31,6 +31,7 @@ XLSX = "fdbf4ff8-1666-58a4-91e7-1b58723a45e0"
 
 [compat]
 CartesianGrids = "0.1.29, 0.1.30"
+ConstrainedSystems = "0.3.6, 0.3.6"
 DocStringExtensions = "0.8.1, 0.9"
 LinearAlgebra = "1.6"
 Plots = "1.35, 1.36, 1.37, 1.38"
