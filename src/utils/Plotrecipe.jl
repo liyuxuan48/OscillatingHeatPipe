@@ -27,8 +27,11 @@ mutable struct OHPTwall end
     ylim = grid.xlim[2]
 
     # ohp = SimuResult.integrator_plate.p.qline[1].body # one body only for now:)
-    ohp =  SimuResult.integrator_plate.p.forcing["heating models"][end]
+    ohp =  SimuResult.integrator_plate.p.forcing["heating models"][end].shape
     closedornot := SimuResult.integrator_tube.p.tube.closedornot
+
+    aspectratio --> 1
+    grid := false
 
     xlabel --> "x [m]"
     ylabel --> "y [m]"
@@ -37,7 +40,7 @@ mutable struct OHPTwall end
     ylims := ylim
 
     fillalpha := 0
-    framestyle := :box
+    framestyle := :plain
 
     linecolor := palette([:blue,:red], 2)
     
@@ -332,6 +335,38 @@ end
     label --> string.("RTD", label_for_plotting')
     
     thist,ghist[:,label_for_plotting] .- T0
+end
+
+@recipe function f(::OHPCond, label_for_conductance::Tuple, sensor_data::Tuple, SimuResult::SimulationResult)  
+    
+    i1 = label_for_conductance[1]
+    i2 = label_for_conductance[2]
+     
+    thist = sensor_data[1]
+    ghist = sensor_data[2]
+    
+    power = SimuResult.integrator_tube.p.wall.power
+    
+    T0 = SimuResult.integrator_tube.u[end]
+    
+    title := "thermal conductance"
+    linewidth := 2
+    # legend := :topright
+    
+    xlabel:="time [s]"
+    ylabel:="G [W/K]"
+    
+    xlimit --> (0.0,thist[end])
+    ylimit --> (0.0,20.0)
+    
+    color := :blue
+#     ribbon := 1
+#     n = length(label_for_plotting)
+#     color := palette(:default)[1:n]'
+    
+    label := string.("G model")
+
+    thist,power./(ghist[:,i1] .-ghist[:,i2])
 end
 
 @recipe function f(::OHPCond, label_for_conductance::Tuple, sensor_data::Tuple, exp_data::Tuple, SimuResult::SimulationResult)  
