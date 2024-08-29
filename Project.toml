@@ -30,6 +30,7 @@ UnPack = "3a884ed6-31ef-47d7-9d2a-63182c4928ed"
 XLSX = "fdbf4ff8-1666-58a4-91e7-1b58723a45e0"
 
 [compat]
+ConstrainedSystems = "=0.3.6"
 DocStringExtensions = "0.8.1, 0.9"
 LinearAlgebra = "1.6"
 Plots = "1.35, 1.36, 1.37, 1.38"
