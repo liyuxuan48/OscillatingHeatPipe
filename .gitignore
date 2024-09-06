@@ -28,3 +28,4 @@ src/tmp.gif
 *.gif
 *.csv
 *.xlsx
+/examples
