@@ -290,10 +290,15 @@ function wallθtovec(θwall::Vector{Float64})
 end
 
 function Hfilm(δfilm,sys)
+
+    @unpack PtoT = sys.propconvert
+    Tavg = PtoT.(median(sys.vapor.P))
+
     δmin = sys.vapor.δmin;
     δthreshold = 5e-6
     δmax = 1e-4
-    kₗ   = sys.vapor.k
+
+    kₗ   = sys.vapor.k(Tavg)
     Hᵥ  = sys.vapor.Hᵥ
 
     if (δfilm > δthreshold) && (δfilm < δmax)
@@ -482,14 +487,17 @@ function Catoδ(d,Ca;adjust_factor=1,δmin=2e-6,δmax=1e-4)
     end
 end
 
-function RntoΔT(Rn,Tref,fluid_type,d,TtoP)
-    p_fluid = SaturationFluidProperty(fluid_type,Tref);
+function RntoΔT(Rn,Tref,d,TtoP,Rkg_range,Hfg_range,σrange)
+    # p_fluid = SaturationFluidProperty(fluid_type,Tref);
 
-    Rkg = p_fluid.R/p_fluid.M
+    # Rkg = p_fluid.R/p_fluid.M
+    Rkg = Rkg_range(Tref)
     Rin = d/2
     P = TtoP(Tref)
+    Hfg = Hfg_range(Tref)
+    σ = σrange(Tref)
 
-    y = Rkg .* Tref ./ (p_fluid.hᵥ-p_fluid.hₗ) .* log.(1 .+ 2 .* p_fluid.σ ./ P .* (1 ./ Rn .- 1/(2Rin)))
+    y = Rkg .* Tref ./ (Hfg) .* log.(1 .+ 2 .* σ ./ P .* (1 ./ Rn .- 1/(2Rin)))
     ΔTref = Tref .* (1 ./ (1 .- y) .- 1)
 end
 

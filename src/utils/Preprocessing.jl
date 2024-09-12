@@ -112,7 +112,7 @@ end
 function initialize_ohpsys(sys,p_fluid,power;closedornot=true,boil_waiting_time=1.0,Rn_boil=3e-6,inertia_f=1.3,d=1e-3,tubeshape="square",Nu=3.6,slugnum=30,δfilm_relative=0.04,film_fraction=0.3,g = [0.0,0.0], ηplus=0.6, ηminus=0.0, nucleatenum = 250, L_newbubble = 6e-3, ch_ratio=0.46,σcharge=0.1)
 
     # unpack CoolProp Properties
-    @unpack fluid_type,Tref,kₗ,ρₗ,Cpₗ,αₗ,μₗ,σ = p_fluid  
+    @unpack fluid_type,Tref,Trange,kₗ,ρₗ,Cpₗ,αₗ,μₗ,σ,hfg,Rkg = p_fluid  
 
     # PropConvert
     # an interpolation between different working fluid propeties (currently assuming saturated gas curve)
@@ -126,7 +126,8 @@ function initialize_ohpsys(sys,p_fluid,power;closedornot=true,boil_waiting_time=
     tube = Tube(d,peri,Ac,L,g,closedornot,N);
 
     # Liquid
-    Hₗ = p_fluid.kₗ/d * Nu # Nusselt number given
+    Hₗ = LinearInterpolation(Trange, p_fluid.kₗ(Trange) .* (Nu ./d)) # Nusselt number given
+
     X0,dXdt0,realratio = randomXp(tube,numofslugs=slugnum,chargeratio=ch_ratio,σ_charge=σcharge)
     Xarrays,θarrays = constructXarrays(X0,N,Tref,L);
     
@@ -142,7 +143,7 @@ function initialize_ohpsys(sys,p_fluid,power;closedornot=true,boil_waiting_time=
     δend_initial   = zero(Lvaporplug) .+ δfilm ;
     Lfilm_start_initial = 0.5 .* film_fraction .* Lvaporplug
     Lfilm_end_initial   = deepcopy(Lfilm_start_initial)
-    vapors=Vapor(ad_fac=inertia_f,k = p_fluid.kₗ,P=P_initial,δstart=δstart_initial,δend=δend_initial,Lfilm_start=Lfilm_start_initial,Lfilm_end=Lfilm_end_initial,Eratio_plus=ηplus,Eratio_minus=ηminus);
+    vapors=Vapor(ad_fac=inertia_f,k = kₗ, hfg=hfg,Rkg=Rkg,P=P_initial,δstart=δstart_initial,δend=δend_initial,Lfilm_start=Lfilm_start_initial,Lfilm_end=Lfilm_end_initial,Eratio_plus=ηplus,Eratio_minus=ηminus);
 
     # Wall
     Xstations = sort(rand(nucleatenum) .* L);

@@ -28,8 +28,11 @@ function sys_interpolation_openloop(sys)
 
     H_film_start = Hfilm.(δstart,[sys])
     H_film_end = Hfilm.(δend,[sys])
+
+    Tavg = median(θ)
+
     H_vapor = sys.vapor.Hᵥ
-    H_liquid = sys.liquid.Hₗ
+    H_liquid = sys.liquid.Hₗ(Tavg)
 
     Nvapor = length(P)
 
@@ -108,8 +111,13 @@ function sys_interpolation_closedloop(sys)
 
     H_film_start = Hfilm.(δstart,[sys])
     H_film_end = Hfilm.(δend,[sys])
+
+    Tavg = median(θ)
+
     H_vapor = sys.vapor.Hᵥ
-    H_liquid = sys.liquid.Hₗ
+    H_liquid = sys.liquid.Hₗ(Tavg)
+    # H_vapor = sys.vapor.Hᵥ
+    # H_liquid = sys.liquid.Hₗ
 
     Nvapor = length(P)
 

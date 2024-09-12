@@ -13,7 +13,11 @@ function dynamicsmodel(u::Array{Float64,1},p::PHPSystem)
     @unpack P,Eratio_plus,Eratio_minus,δstart,δend,Lfilm_start,Lfilm_end,ad_fac = sys.vapor
     @unpack L_newbubble = sys.wall
 
-    # println(Xp)
+    @unpack PtoT = sys.propconvert
+    Tavg = PtoT.(median(sys.vapor.P))
+
+    σavg = σ(Tavg)
+    μₗavg = μₗ(Tavg)
 
     # number of liquid slugs
     numofliquidslug = length(Xp)
@@ -23,7 +27,7 @@ function dynamicsmodel(u::Array{Float64,1},p::PHPSystem)
 
     # get a characteristic Capilarry number based on the average velocities
     Vavg = mean(abs.(V))
-    Ca = getCa.(μₗ,σ,Vavg)
+    Ca = getCa.(μₗavg,σavg,Vavg)
 
     # get liquid film deposition area
     δdeposit = Catoδ(d,Ca,adjust_factor=ad_fac)
@@ -49,7 +53,7 @@ function dynamicsmodel(u::Array{Float64,1},p::PHPSystem)
     # get differential equation factors
     lhs = ρₗ*Ac .* Lliquidslug
     rhs_press = Ac ./ lhs
-    Re_list = ρₗ .* abs.(V) .* d ./ μₗ
+    Re_list = ρₗ .* abs.(V) .* d ./ μₗavg
     f_coefficient = f_churchill.(Re_list .+ 1e-4)
     dXdt_to_stress = -0.125 .* f_coefficient .* ρₗ .* V .* abs.(V)
     rhs_dXdt = peri .* Lliquidslug .* dXdt_to_stress ./ lhs
@@ -128,22 +132,6 @@ function dynamicsmodel(u::Array{Float64,1},p::PHPSystem)
             # du[4*numofliquidslug+2*numofvaporbubble+1:4*numofliquidslug+3*numofvaporbubble] = dδdt_end # equals to 0 for now
             du[4*numofliquidslug+3*numofvaporbubble+1:4*numofliquidslug+4*numofvaporbubble] = dLdt_start # equals to 0 for now
             du[4*numofliquidslug+4*numofvaporbubble+1:4*numofliquidslug+5*numofvaporbubble] = dLdt_end # equals to 0 for now
-
-
-            # println(dδdt_end)
-            # println(δdeposit)
-            # println(Vavg)
-            # println(v_momentum)
-            # println(Adeposit)
-            # println(Adeposit_left)
-            # println(v_liquid_left_normal)
-            # println(δstart)
-            # println(δend)
-            # println(Lfilm_end)
-            # println(dLdt_start)
-            # println(dLdt_end)
-            # println(v_liquid_left_final)
-            # println(v_liquid_right_final)
 
             return du
 
@@ -311,6 +299,9 @@ end
 
 function dMdtdynamicsmodel(Xpvapor::Array{Tuple{Float64,Float64},1},sys::PHPSystem)
 
+    @unpack PtoT = sys.propconvert
+    Tavg = PtoT.(median(sys.vapor.P))
+
     dMdt_latent_start=zeros(length(Xpvapor))
     dMdt_latent_end=zeros(length(Xpvapor))
     dMdt_latent_start_positive=zeros(length(Xpvapor))
@@ -320,7 +311,7 @@ function dMdtdynamicsmodel(Xpvapor::Array{Tuple{Float64,Float64},1},sys::PHPSyst
 
     peri = sys.tube.peri
     Ac = sys.tube.Ac
-    k = sys.vapor.k
+    kavg = sys.vapor.k(Tavg)
 
     Lfilm_start = sys.vapor.Lfilm_start
     Lfilm_end = sys.vapor.Lfilm_end
@@ -365,8 +356,8 @@ function dMdtdynamicsmodel(Xpvapor::Array{Tuple{Float64,Float64},1},sys::PHPSyst
         slope_l = (i == 1) ? getslope(θarrays[1][end],θarrays[1][end-1],Xarrays[1][end],Xarrays[1][end-1]) : getslope(θarrays[i-1][end],θarrays[i-1][end-1],Xarrays[i-1][end],Xarrays[i-1][end-1])
 
 
-        axial_rhs_end = Ac*k*slope_r /Hfg[i]
-        axial_rhs_start = Ac*k*(-slope_l) /Hfg[i]
+        axial_rhs_end = Ac*kavg*slope_r /Hfg[i]
+        axial_rhs_start = Ac*kavg*(-slope_l) /Hfg[i]
 
         dMdt_latent_start[i] = heatflux_start*peri/Hfg[i] + axial_rhs_start
         dMdt_latent_end[i] = heatflux_end*peri/Hfg[i] + axial_rhs_end
@@ -387,10 +378,15 @@ function liquidmodel(p::PHPSystem)
     @unpack θarrays,Xarrays,Hₗ,αₗ,Cpₗ,ρₗ = p.liquid
     @unpack Ac,L,peri = p.tube
     @unpack θ_interp_walltoliquid = p.mapping
+    @unpack PtoT = p.propconvert
+    Tavg = PtoT(median(p.vapor.P))
 
+    Hₗavg = Hₗ(Tavg)
+    αₗavg = αₗ(Tavg)
+    Cpₗavg = Cpₗ(Tavg)
     du = 0 .* θarrays
 
-    H_rhs = peri / (ρₗ*Cpₗ*Ac)
+    H_rhs = peri / (ρₗ*Cpₗavg*Ac)
 
     for i in eachindex(θarrays)
         
@@ -398,7 +394,7 @@ function liquidmodel(p::PHPSystem)
         dx = mod(xs[end] - xs[1], L) / length(xs)
 
         fx = map(θ_interp_walltoliquid, xs) - θarrays[i]
-        du[i] = αₗ .* laplacian(θarrays[i]) ./ dx ./ dx + Hₗ .* fx .* H_rhs
+        du[i] = αₗavg .* laplacian(θarrays[i]) ./ dx ./ dx + Hₗavg .* fx .* H_rhs
     end
 
     return du

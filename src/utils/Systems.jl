@@ -59,12 +59,12 @@ function PropConvert(fluid_type::String);
 end
 
 mutable struct Liquid
-    Hₗ::Float64
+    Hₗ::AbstractInterpolation
     ρₗ::Float64
-    Cpₗ::Float64
-    αₗ::Float64
-    μₗ::Float64
-    σ::Float64
+    Cpₗ::AbstractInterpolation
+    αₗ::AbstractInterpolation
+    μₗ::AbstractInterpolation
+    σ::AbstractInterpolation
     Xp::Array{Tuple{Float64,Float64},1}
     dXdt::Array{Tuple{Float64,Float64},1}
     Xarrays::Array{Array{Float64,1},1}
@@ -85,7 +85,9 @@ end
 @with_kw mutable struct Vapor
     ad_fac::Float64                 = 1.3
     Hᵥ::Float64                     = 0.0
-    k::Float64
+    k::AbstractInterpolation
+    hfg::AbstractInterpolation
+    Rkg::AbstractInterpolation
     δmin::Float64                   = 2e-6
     Eratio_plus::Float64            = 0.15
     Eratio_minus::Float64           = 0.0
