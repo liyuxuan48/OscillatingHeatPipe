@@ -75,7 +75,7 @@ end
 
             if time != :none
             # @series begin
-            annotation --> [(0.0, 0.04, string("time = ", round(time, digits=2), "[s]"))]
+            annotation --> [(0.0, 0.045, string("time = ", round(time, digits=2), "[s]"))]
             # end
             end
     else
@@ -127,8 +127,30 @@ end
 
     if plain == false
 
-        annotation := [(-0.052+adjust, -0.028, "dry vapor"),(-0.01+0.007+adjust, -0.028, "vapor with film"),
-        (0.04+0.002+adjust, -0.028, "liquid"),(0.0, 0.03, string("time = ", round(tube_hist_t[i], digits=2), "[s]"))]
+        # annotation := [(-0.052+adjust, -0.028, "dry vapor"),(-0.01+0.007+adjust, -0.028, "vapor with film"),
+        # (0.04+0.002+adjust, -0.028, "liquid"),(0.0, 0.03, string("time = ", round(tube_hist_t[i], digits=2), "[s]"))]
+
+        # @series begin
+        #     # annotation := (0, 0, "Look up!")
+        #     seriestype := :scatter
+        #     color := :red
+        #     [-0.07+adjust],[-0.028]
+        # end
+
+        # @series begin
+        #     seriestype := :scatter
+        #     color := :yellow
+        #     [-0.03+adjust],[-0.028]
+        # end
+
+        # @series begin
+        #     seriestype := :scatter
+        #     color := :blue
+        #     [0.03+adjust],[-0.028]
+        # end
+
+        annotation := [(-0.07+adjust, -0.034, "dry vapor"),(-0.01+adjust, -0.034, "vapor with film"),
+        (0.04+adjust, -0.034, "liquid"),(0.0, 0.03, string("time = ", round(tube_hist_t[i], digits=2), "[s]"))]
 
         @series begin
             # annotation := (0, 0, "Look up!")
