@@ -5,10 +5,23 @@ duliquidθtovec,duwallθtovec,liquidθtovec,wallθtovec, # transfer temperature 
 Hfilm,getδarea,getδFromδarea,getMvapor,getMfilm,getMliquid,getVolumevapor,
 getCa,filmδcorr,getAdeposit,f_churchill,Catoδ,RntoΔT,systoM
 
+"""
+    This function is to give a vector of gravity given the magnitude of gravity and the angle of gravity.
+    The gravity angle is in [rad] and starts on the positive direction of the x-axis.
+        g0          ::   The magnitude of gravity
+        g_angle     ::   The radian of gravity
+"""
 function getgvec(g0::T,g_angle::T=3/2*π) where {T<:Real}
     g = g0*[cos(g_angle),sin(g_angle)]
 end
 
+"""
+    This function is to give the gravity potential at location x,y given the gravity vector g, relative to the 
+    [x,y] = [0,0] location.
+        g     ::   The 2D vector of gravity
+        x     ::   The x of a vector of points
+        y     ::   The y of a vector of points
+"""
 function getgh(g::Vector{T},x::Vector{T},y::Vector{T}) where {T<:Real}
     xy = [x';y']
     vec(sum(-g .* xy,dims=1));
