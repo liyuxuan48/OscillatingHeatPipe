@@ -289,10 +289,15 @@ function wallθtovec(θwall::Vector{Float64})
     return [SEPERATION_VAR; θwall]
 end
 
+"""
+    Hfilm(δfilm,sys::PHPSystem)
+
+Return the heat transfer coefficient for the film with thickness `δfilm`
+"""
 function Hfilm(δfilm,sys)
     δmin = sys.vapor.δmin;
-    δthreshold = 5e-6
-    δmax = 1e-4
+    δthreshold = FILM_THRESHOLD
+    δmax = FILM_MAX_THICKNESS
     kₗ   = sys.vapor.k
     Hᵥ  = sys.vapor.Hᵥ
 

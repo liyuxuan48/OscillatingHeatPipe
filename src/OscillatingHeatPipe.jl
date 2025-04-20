@@ -21,6 +21,7 @@ const INCHES = 2.54e-2;
 const GRAVITY = 9.8;
 const SEPERATION_VAR = -1e10
 
+include("utils/constants.jl")
 include("utils/Systems.jl")
 include("utils/CoolProp.jl")
 include("utils/Preprocessing.jl")

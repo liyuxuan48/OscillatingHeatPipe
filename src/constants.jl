@@ -1,0 +1,2 @@
+const FILM_THRESHOLD 5e-6
+const FILM_MAX_THICKNESS e-4
