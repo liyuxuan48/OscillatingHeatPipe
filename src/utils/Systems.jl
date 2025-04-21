@@ -116,11 +116,13 @@ end
     boiltime_stations::Array{Float64,1}
     Xarray::Array{Float64,1}
     θarray::Array{Float64,1}
+    curvarray::Array{Float64,1}
 end
 
 """
 Mapping is a struct containing interpolation data
     θ_interp_walltoliquid   temperature interpolation from wall to OHP
+    curv_interp_walltoliquid tube curvature interpolation from wall to OHP
     θ_interp_liquidtowall   temperature interpolation from OHP to wall
     H_interp_liquidtowall   heat transfer coefficient interpolation from OHP to wall
     P_interp_liquidtowall   pressure interpolation from OHP to wall
@@ -132,11 +134,12 @@ Mapping is a struct containing interpolation data
 # end
 
 mutable struct Mapping
-    θ_interp_walltoliquid :: AbstractInterpolation
-    θ_interp_liquidtowall :: AbstractInterpolation
-    H_interp_liquidtowall :: AbstractInterpolation
-    P_interp_liquidtowall :: AbstractInterpolation
-    heightg_interp        :: AbstractInterpolation
+    θ_interp_walltoliquid    :: AbstractInterpolation
+    curv_interp_walltoliquid :: AbstractInterpolation
+    θ_interp_liquidtowall    :: AbstractInterpolation
+    H_interp_liquidtowall    :: AbstractInterpolation
+    P_interp_liquidtowall    :: AbstractInterpolation
+    heightg_interp           :: AbstractInterpolation
 end
 
 """

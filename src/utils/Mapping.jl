@@ -115,13 +115,13 @@ function sys_interpolation_closedloop(sys)
 
     loop_plus_index = [2:Nvapor;1]
 
-    max_i = argmax(Xpvapor)
-    max_j = argmax(Xpvapor[max_i])
+    max_i = argmax(Xpvapor) # vapor plug with largest arc coordinate
+    max_j = argmax(Xpvapor[max_i]) # end of this plug with the largest coordinate (1 or 2)
   
-
+    # Loop through the vapor and slugs (which there are equal number of)
     for i = 1:Nvapor
 
-            if i == max_i && max_j != 2
+            if i == max_i && max_j != 2 # if this is the furthest plug and it crosses the branch cut
 
                 X_inner_loop_append,H_inner_loop_append = XHloop_append(i,H_film_start[i],H_film_end[i],sys)
 
@@ -131,7 +131,7 @@ function sys_interpolation_closedloop(sys)
 
                 append!(X_inner_pres,[Xpvapor[i][1], sys.tube.L, 0.0, Xpvapor[i][end]])
                 append!(P_inner,[P[i], P[i], P[i], P[i]])
-            else
+            else 
                 append!(X_inner,[Xpvapor[i][1],Xpvapor[i][1]+Lfilm_start[i],
                 Xpvapor[i][1]+Lfilm_start[i],Xpvapor[i][end]-Lfilm_end[i],
                 Xpvapor[i][end]-Lfilm_end[i],Xpvapor[i][end]])
@@ -199,6 +199,8 @@ end
 
     extend_wall_Xarray = [0.0;sys.wall.Xarray;sys.tube.L]
     extend_wall_θarray = [(sys.wall.θarray[1]+sys.wall.θarray[end])/2;sys.wall.θarray;(sys.wall.θarray[1]+sys.wall.θarray[end])/2]
+    extend_wall_curvarray = [(sys.wall.curvarray[1]+sys.wall.curvarray[end])/2;sys.wall.curvarray;(sys.wall.curvarray[1]+sys.wall.curvarray[end])/2]
+
 
     Interpolations.deduplicate_knots!(X_inner_final,move_knots = true)
     Interpolations.deduplicate_knots!(extend_wall_Xarray,move_knots = true)
@@ -210,10 +212,12 @@ end
 
     θ_interp_walltoliquid = LinearInterpolation(extend_wall_Xarray, extend_wall_θarray);
 
+    curv_interp_walltoliquid = LinearInterpolation(extend_wall_Xarray, extend_wall_curvarray)
+
     P_interp_liquidtowall = LinearInterpolation(X_inner_pres_final, P_inner_final);
 
 
-    return θ_interp_walltoliquid, θ_interp_liquidtowall, H_interp_liquidtowall, P_interp_liquidtowall
+    return θ_interp_walltoliquid, curv_interp_walltoliquid, θ_interp_liquidtowall, H_interp_liquidtowall, P_interp_liquidtowall
 
 end
 

@@ -149,16 +149,16 @@ function initialize_ohpsys(sys,p_fluid,power;closedornot=true,boil_waiting_time=
     Xstation_time = zeros(nucleatenum);
     boil_type = "wall T"
     boil_interval = boil_waiting_time
-    Xwallarray,θwallarray = constructwallXθarray(arccoord(ohp.shape),Tref);
-    wall = Wall(boil_interval=boil_interval,fluid_type=fluid_type,boil_type=boil_type,power=power,L_newbubble=L_newbubble,Xstations=Xstations,boiltime_stations=Xstation_time,Xarray=Xwallarray,θarray=θwallarray,Rn=Rn_boil);
+    Xwallarray,θwallarray,curvwallarray = constructwallXθarray(arccoord(ohp.shape),Tref,curvature(ohp.shape));
+    wall = Wall(boil_interval=boil_interval,fluid_type=fluid_type,boil_type=boil_type,power=power,L_newbubble=L_newbubble,Xstations=Xstations,boiltime_stations=Xstation_time,Xarray=Xwallarray,θarray=θwallarray,curvarray=curvwallarray,Rn=Rn_boil);
 
     # Mapping
     @unpack x,y = ohp.transform(ohp.shape)
     sys0_nomapping = PHPSystem_nomapping(tube,liquids,vapors,wall,propconvert);
-    θ_interp_walltoliquid, θ_interp_liquidtowall, H_interp_liquidtowall, P_interp_liquidtowall = sys_interpolation(sys0_nomapping)
+    θ_interp_walltoliquid, curv_interp_walltoliquid, θ_interp_liquidtowall, H_interp_liquidtowall, P_interp_liquidtowall = sys_interpolation(sys0_nomapping)
     ht = getgh(g,x,y);
     heightg_interp = LinearInterpolation(Xwallarray,ht,extrapolation_bc = Line())
-    mapping = Mapping(θ_interp_walltoliquid, θ_interp_liquidtowall, H_interp_liquidtowall, P_interp_liquidtowall,heightg_interp);
+    mapping = Mapping(θ_interp_walltoliquid, curv_interp_walltoliquid, θ_interp_liquidtowall, H_interp_liquidtowall, P_interp_liquidtowall,heightg_interp);
 
     # Cache
     Mfilm_left, Mfilm_right = getMfilm(sys0_nomapping)

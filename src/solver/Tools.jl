@@ -17,6 +17,18 @@ end
 delta(n) = n != 0
 
 
+#=
+Some notes on structures of liquid and vapor positions:
+- Xp contains the liquid slug begin/end positions (in arclength). It is arranged as a
+  vector of tuples, where the first tuple element is the beginning and second element is
+  the end
+- If the tube is periodic, then `tube.closedornot = true` and there are as many vapor plugs as liquid slugs.
+  Vapor plug i is bounded by liquid slugs i-1 and i. Plug 1 is bounded by N and 1.
+- If the tube is not periodic, then there is one fewer vapor plugs than liquid slugs. It
+  it assumed that there are liquid slugs at the beginning and end (?). Vapor plug i is bounded
+  by slugs i and i+1.
+=#
+
 """
     This function is to transform Xp, dXdt of the interface, and M of the vapor to form our state vector u
         Xp    ::   the locations of all interfaces
@@ -152,9 +164,15 @@ end
         L     ::   the length of the 1D tube
 """
 
+"""
+    getXpvapor(Xp::Vector{Tuple},closedornot) -> Vector{Tuple}
+
+Given the vector of liquid slug coordinates `Xp`, return the vector of vapor plug coordinates. 
+"""
 function getXpvapor(Xp::Vector{Tuple{Float64, Float64}},closedornot::Bool)
 
-    if closedornot == false
+    # this is not periodic -- it has ends.  
+    if closedornot == false 
         Xpvapor = map(tuple,zeros(length(Xp)-1),zeros(length(Xp)-1))
         maxindex = length(Xp) - 1
         if maxindex > 1
@@ -166,7 +184,8 @@ function getXpvapor(Xp::Vector{Tuple{Float64, Float64}},closedornot::Bool)
         end
     end
 
-    if closedornot == true
+    # this is a periodic tube, so there are as many vapor plugs and liquid slugs
+    if closedornot == true  
         Xpvapor = map(tuple,zeros(length(Xp)),zeros(length(Xp)))
         Xpvapor[1]=(Xp[end][end],Xp[1][1])
         for i = 2:(length(Xp))
@@ -256,11 +275,12 @@ end
     L        :: tube length
 """
 
-function constructwallXθarray(line::Vector{Float64},θinitial::Float64)
+function constructwallXθarray(line::Vector{Float64},θinitial::Float64,curv::Vector{Float64})
     Xwallarray = deepcopy(line)
     θwallarray = Xwallarray .* 0 .+ θinitial
+    curvwallarray = deepcopy(curv)
 
-    return(Xwallarray,θwallarray)
+    return(Xwallarray,θwallarray,curvwallarray)
 end
 
 

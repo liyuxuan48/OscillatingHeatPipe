@@ -1,2 +1,6 @@
-const FILM_THRESHOLD 5e-6
-const FILM_MAX_THICKNESS e-4
+const FILM_THRESHOLD=5e-6
+const FILM_MAX_THICKNESS=1e-4
+
+const INCHES = 2.54e-2
+const GRAVITY = 9.8
+const SEPERATION_VAR = -1e10
