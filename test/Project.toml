@@ -1,8 +1,0 @@
-[deps]
-Interact = "c601a237-2ae4-5e1e-952c-7a85b0c7eef1"
-Literate = "98b081ad-f1c9-55d3-8b20-4c87d4299306"
-Plots = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
-ProgressMeter = "92933f4c-e287-5a05-a399-4b506db050ca"
-Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
-WebIO = "0f1e0344-ec1d-5b48-a673-e5cf874b6c29"
-XLSX = "fdbf4ff8-1666-58a4-91e7-1b58723a45e0"

@@ -35,11 +35,16 @@ function onesideXp(ohp,tube::Tube,line)
 end
 
 """
-generate an array of tuple "X0" of the liquid slugs (X0 stands for location), 
-"dXdt" of the same format but in zero for the liquid slugs (dXdt stands for velocity)
-"real_ratio" means the volume fraction of the liquid slugs
-"""
+    randomXp(L::Real,Lmin::Real,closedornot::Bool;[numofslugs=30,chargeratio=0.46,σ_charge=0.1])
 
+Generates a random distribution of `numofslugs` liquid slugs in a length `L`,
+with a nominal volume fraction `chargeratio` and with length standard deviation
+`σ_charge`.
+
+It outputs: an array of tuple of the liquid slug start/end arc length coordinates, 
+an array of slug velocities of the same length but set to zero, and 
+the actual volume fraction of the constructed liquid slugs.
+"""
 function randomXp(tube::Tube; kwargs...)
     @unpack L,d,closedornot = tube
 
@@ -84,7 +89,8 @@ function randomXp(L::Real,Lmin::Real,closedornot::Bool;numofslugs=30,chargeratio
             displacement = 0.0
         end
 
-    else println("generation failed")
+    else
+        error("Generation of random slugs failed")
     end
 
     X0 = map(tuple,Xp1s,Xp2s)
@@ -109,7 +115,47 @@ function peri_Ac(d::Float64,tubeshape::String)
     peri,Ac
 end
 
-function initialize_ohpsys(sys,p_fluid,power;closedornot=true,boil_waiting_time=1.0,Rn_boil=3e-6,inertia_f=1.3,d=1e-3,tubeshape="square",Nu=3.6,slugnum=30,δfilm_relative=0.04,film_fraction=0.3,g = [0.0,0.0], ηplus=0.6, ηminus=0.0, nucleatenum = 250, L_newbubble = 6e-3, ch_ratio=0.46,σcharge=0.1)
+"""
+    initialize_ohpsys(sys::ILMSystem,p_fluid,power;[closedornot=true,
+                                                    boil_waiting_time=1.0,
+                                                    Rn_boil=3e-6,
+                                                    inertia_f=1.3,
+                                                    d=1e-3,
+                                                    tubeshape="square",
+                                                    Nu=3.6,
+                                                    slugnum=30,
+                                                    δfilm_relative=0.04,
+                                                    film_fraction=0.3,
+                                                    g = [0,0],
+                                                    ηplus=0.6,ηminus=0,
+                                                    nucleatenum=250,
+                                                    L_newbubble=6e-3,
+                                                    ch_ratio=0.46,
+                                                    σcharge=0.1]) -> PHPSystem
+
+Constructor for the `PHPSystem` type, to initialize an OHP system.
+Initializes the tube, liquid slugs, vapor regions, wall, and the mappings.
+The inputs are `sys` the embedding substrate of type `ILMSystem` (which is expected to contain the
+OHP geometry as a line source as the last element in the heating models array),
+a tuple of fluid properties `p_fluid`, and the heater power input `power`.
+"""
+function initialize_ohpsys(sys::ILMSystem,p_fluid,power;closedornot=DEFAULT_CLOSED,
+                                                        boil_waiting_time=DEFAULT_BOIL_WAITING_TIME,
+                                                        Rn_boil=DEFAULT_RN_BOIL,
+                                                        inertia_f=DEFAULT_INERTIA_F,
+                                                        d=DEFAULT_D,
+                                                        tubeshape=DEFAULT_TUBESHAPE,
+                                                        Nu=DEFAULT_NU,
+                                                        slugnum=DEFAULT_SLUGNUM,
+                                                        δfilm_relative=DEFAULT_DFILM_RELATIVE,
+                                                        film_fraction=DEFAULT_FILM_FRACTION,
+                                                        g = DEFAULT_G,
+                                                        ηplus=DEFAULT_ETAPLUS,
+                                                        ηminus=DEFAULT_ETAMINUS,
+                                                        nucleatenum = DEFAULT_NUCLEATENUM,
+                                                        L_newbubble = DEFAULT_L_NEWBUBBLE,
+                                                        ch_ratio=DEFAULT_CHARGE_RATIO,
+                                                        σcharge=DEFAULT_SIGMA_CHARGE)
 
     # unpack CoolProp Properties
     @unpack fluid_type,Tref,kₗ,ρₗ,Cpₗ,αₗ,μₗ,σ = p_fluid  

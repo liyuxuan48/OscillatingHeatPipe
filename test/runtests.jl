@@ -1,5 +1,7 @@
 ##using TestSetExtensions
+using OscillatingHeatPipe
 using Literate
+using Test
 
 const GROUP = get(ENV, "GROUP", "All")
 
@@ -8,6 +10,7 @@ docdir = "../docs/src/manual"
 litdir = "./literate"
 
 if GROUP == "All" || GROUP == "Auxiliary"
+  include("datastructures.jl")
   #include("pointforce.jl")
 end
 
