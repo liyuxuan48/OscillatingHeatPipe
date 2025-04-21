@@ -51,7 +51,9 @@ function randomXp(tube::Tube; kwargs...)
     randomXp(L::Real,d::Real,closedornot::Bool; kwargs...)
 end
 
-function randomXp(L::Real,Lmin::Real,closedornot::Bool;numofslugs=30,chargeratio=0.46,σ_charge=0.1)
+function randomXp(L::Real,Lmin::Real,closedornot::Bool;numofslugs=DEFAULT_SLUGNUM,
+                                                       chargeratio=DEFAULT_CHARGE_RATIO,
+                                                       σ_charge=DEFAULT_SIGMA_CHARGE)
 
 
     σ_persection = σ_charge*L/sqrt(numofslugs)
@@ -165,27 +167,27 @@ function initialize_ohpsys(sys::ILMSystem,p_fluid,power;closedornot=DEFAULT_CLOS
     propconvert = PropConvert(fluid_type)
 
     # Tube
-    ohp = sys.forcing["heating models"][end] # by default, the last heating model is the ohp
-    L = arccoord(ohp.shape)[end]             # total length of the pipe when streched to a 1D pipe (an approximate here)
-    N=numpts(ohp.shape)                      # number of ohp points
+    ohp = _get_ohp_from_forcing_list(sys)
+    L = arclength(ohp.shape)            # total length of the pipe when streched to a 1D pipe (an approximate here)
+    N = numpts(ohp.shape)                      # number of ohp points
     peri,Ac = peri_Ac(d,tubeshape)
     tube = Tube(d,peri,Ac,L,g,closedornot,N);
 
     # Liquid
     Hₗ = p_fluid.kₗ/d * Nu # Nusselt number given
     X0,dXdt0,realratio = randomXp(tube,numofslugs=slugnum,chargeratio=ch_ratio,σ_charge=σcharge)
-    Xarrays,θarrays = constructXarrays(X0,N,Tref,L);
+    Xarrays,θarrays = constructXarrays(X0,N,Tref,L)
     
-    liquids=Liquid(Hₗ,ρₗ,Cpₗ,αₗ,μₗ,σ,X0,dXdt0,Xarrays,θarrays);
+    liquids=Liquid(Hₗ,ρₗ,Cpₗ,αₗ,μₗ,σ,X0,dXdt0,Xarrays,θarrays)
 
     # Vapor
     @unpack TtoP = propconvert
 
     Lvaporplug = XptoLvaporplug(X0,L,tube.closedornot)
-    P_initial = zero(Lvaporplug) .+ TtoP(Tref);
+    P_initial = zero(Lvaporplug) .+ TtoP(Tref)
     δfilm = δfilm_relative * d/2
-    δstart_initial = zero(Lvaporplug) .+ δfilm ;
-    δend_initial   = zero(Lvaporplug) .+ δfilm ;
+    δstart_initial = zero(Lvaporplug) .+ δfilm
+    δend_initial   = zero(Lvaporplug) .+ δfilm
     Lfilm_start_initial = 0.5 .* film_fraction .* Lvaporplug
     Lfilm_end_initial   = deepcopy(Lfilm_start_initial)
     vapors=Vapor(ad_fac=inertia_f,k = p_fluid.kₗ,P=P_initial,δstart=δstart_initial,δend=δend_initial,Lfilm_start=Lfilm_start_initial,Lfilm_end=Lfilm_end_initial,Eratio_plus=ηplus,Eratio_minus=ηminus);
@@ -216,6 +218,12 @@ function initialize_ohpsys(sys::ILMSystem,p_fluid,power;closedornot=DEFAULT_CLOS
     sys0 = PHPSystem(tube,liquids,vapors,wall,propconvert,mapping,cache);
 
     sys0
+end
+
+function _get_ohp_from_forcing_list(sys::ILMSystem)
+    ohp = sys.forcing["heating models"][end] # should be at end of list
+    ohp isa LineForcingModel || error("OHP not in expected place in forcing list")
+    return ohp
 end
 
 

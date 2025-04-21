@@ -106,11 +106,11 @@ function vectoXMδL(u::Array{Float64,1})
 end
 
 """
-    This function is to transform Xp of every interface, and L of the tube to form an array of vapor length
-        Xp    ::   the locations of all interfaces
-        L     ::   the length of the 1D tube
-"""
+    XptoLvaporplug(Xp,L,closedornot) -> Vector{Float64}
 
+This function uses the set of coordinates `Xp` of every liquid/vapor interface,
+and length `L` of the tube to form an array of vapor lengths.
+"""
 function XptoLvaporplug(Xp::Vector{Tuple{Float64, Float64}},L::Float64,closedornot::Bool)
 
     if closedornot == false
