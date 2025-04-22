@@ -47,6 +47,7 @@ function dynamicsmodel(u::Array{Float64,1},p::PHPSystem)
     Xpvapor = getXpvapor(Xp,closedornot)
 
     # get differential equation factors
+    curv_interp = sys.mapping.curv_interp_walltoliquid
     lhs = ρₗ*Ac .* Lliquidslug
     rhs_press = Ac ./ lhs
     Re_list = ρₗ .* abs.(V) .* d ./ μₗ

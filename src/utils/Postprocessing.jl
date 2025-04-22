@@ -58,9 +58,9 @@ function getcurrentsys!(u,sys0)
     sysnew.vapor.Lfilm_start = Lfilm_start
     sysnew.vapor.Lfilm_end = Lfilm_end
 
-    θ_interp_walltoliquid, θ_interp_liquidtowall, H_interp_liquidtowall, P_interp_liquidtowall = sys_interpolation(sysnew)
+    θ_interp_walltoliquid, curv_interp_walltoliquid, θ_interp_liquidtowall, H_interp_liquidtowall, P_interp_liquidtowall = sys_interpolation(sysnew)
     heightg_interp = sysnew.mapping.heightg_interp
-    sysnew.mapping = Mapping(θ_interp_walltoliquid, θ_interp_liquidtowall, H_interp_liquidtowall, P_interp_liquidtowall,heightg_interp)
+    sysnew.mapping = Mapping(θ_interp_walltoliquid, curv_interp_walltoliquid, θ_interp_liquidtowall, H_interp_liquidtowall, P_interp_liquidtowall,heightg_interp)
 
     return sysnew
 end

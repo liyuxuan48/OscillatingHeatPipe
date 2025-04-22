@@ -35,18 +35,25 @@ function onesideXp(ohp,tube::Tube,line)
 end
 
 """
-generate an array of tuple "X0" of the liquid slugs (X0 stands for location), 
-"dXdt" of the same format but in zero for the liquid slugs (dXdt stands for velocity)
-"real_ratio" means the volume fraction of the liquid slugs
-"""
+    randomXp(L::Real,Lmin::Real,closedornot::Bool;[numofslugs=30,chargeratio=0.46,σ_charge=0.1])
 
+Generates a random distribution of `numofslugs` liquid slugs in a length `L`,
+with a nominal volume fraction `chargeratio` and with length standard deviation
+`σ_charge`.
+
+It outputs: an array of tuple of the liquid slug start/end arc length coordinates, 
+an array of slug velocities of the same length but set to zero, and 
+the actual volume fraction of the constructed liquid slugs.
+"""
 function randomXp(tube::Tube; kwargs...)
     @unpack L,d,closedornot = tube
 
     randomXp(L::Real,d::Real,closedornot::Bool; kwargs...)
 end
 
-function randomXp(L::Real,Lmin::Real,closedornot::Bool;numofslugs=30,chargeratio=0.46,σ_charge=0.1)
+function randomXp(L::Real,Lmin::Real,closedornot::Bool;numofslugs=DEFAULT_SLUGNUM,
+                                                       chargeratio=DEFAULT_CHARGE_RATIO,
+                                                       σ_charge=DEFAULT_SIGMA_CHARGE)
 
 
     σ_persection = σ_charge*L/sqrt(numofslugs)
@@ -84,7 +91,8 @@ function randomXp(L::Real,Lmin::Real,closedornot::Bool;numofslugs=30,chargeratio
             displacement = 0.0
         end
 
-    else println("generation failed")
+    else
+        error("Generation of random slugs failed")
     end
 
     X0 = map(tuple,Xp1s,Xp2s)
@@ -109,7 +117,47 @@ function peri_Ac(d::Float64,tubeshape::String)
     peri,Ac
 end
 
-function initialize_ohpsys(sys,p_fluid,power;closedornot=true,boil_waiting_time=1.0,Rn_boil=3e-6,inertia_f=1.3,d=1e-3,tubeshape="square",Nu=3.6,slugnum=30,δfilm_relative=0.04,film_fraction=0.3,g = [0.0,0.0], ηplus=0.6, ηminus=0.0, nucleatenum = 250, L_newbubble = 6e-3, ch_ratio=0.46,σcharge=0.1)
+"""
+    initialize_ohpsys(sys::ILMSystem,p_fluid,power;[closedornot=true,
+                                                    boil_waiting_time=1.0,
+                                                    Rn_boil=3e-6,
+                                                    inertia_f=1.3,
+                                                    d=1e-3,
+                                                    tubeshape="square",
+                                                    Nu=3.6,
+                                                    slugnum=30,
+                                                    δfilm_relative=0.04,
+                                                    film_fraction=0.3,
+                                                    g = [0,0],
+                                                    ηplus=0.6,ηminus=0,
+                                                    nucleatenum=250,
+                                                    L_newbubble=6e-3,
+                                                    ch_ratio=0.46,
+                                                    σcharge=0.1]) -> PHPSystem
+
+Constructor for the `PHPSystem` type, to initialize an OHP system.
+Initializes the tube, liquid slugs, vapor regions, wall, and the mappings.
+The inputs are `sys` the embedding substrate of type `ILMSystem` (which is expected to contain the
+OHP geometry as a line source as the last element in the heating models array),
+a tuple of fluid properties `p_fluid`, and the heater power input `power`.
+"""
+function initialize_ohpsys(sys::ILMSystem,p_fluid,power;closedornot=DEFAULT_CLOSED,
+                                                        boil_waiting_time=DEFAULT_BOIL_WAITING_TIME,
+                                                        Rn_boil=DEFAULT_RN_BOIL,
+                                                        inertia_f=DEFAULT_INERTIA_F,
+                                                        d=DEFAULT_D,
+                                                        tubeshape=DEFAULT_TUBESHAPE,
+                                                        Nu=DEFAULT_NU,
+                                                        slugnum=DEFAULT_SLUGNUM,
+                                                        δfilm_relative=DEFAULT_DFILM_RELATIVE,
+                                                        film_fraction=DEFAULT_FILM_FRACTION,
+                                                        g = DEFAULT_G,
+                                                        ηplus=DEFAULT_ETAPLUS,
+                                                        ηminus=DEFAULT_ETAMINUS,
+                                                        nucleatenum = DEFAULT_NUCLEATENUM,
+                                                        L_newbubble = DEFAULT_L_NEWBUBBLE,
+                                                        ch_ratio=DEFAULT_CHARGE_RATIO,
+                                                        σcharge=DEFAULT_SIGMA_CHARGE)
 
     # unpack CoolProp Properties
     @unpack fluid_type,Tref,kₗ,ρₗ,Cpₗ,αₗ,μₗ,σ = p_fluid  
@@ -119,27 +167,27 @@ function initialize_ohpsys(sys,p_fluid,power;closedornot=true,boil_waiting_time=
     propconvert = PropConvert(fluid_type)
 
     # Tube
-    ohp = sys.forcing["heating models"][end] # by default, the last heating model is the ohp
-    L = arccoord(ohp.shape)[end]             # total length of the pipe when streched to a 1D pipe (an approximate here)
-    N=numpts(ohp.shape)                      # number of ohp points
+    ohp = _get_ohp_from_forcing_list(sys)
+    L = arclength(ohp.shape)            # total length of the pipe when streched to a 1D pipe (an approximate here)
+    N = numpts(ohp.shape)                      # number of ohp points
     peri,Ac = peri_Ac(d,tubeshape)
     tube = Tube(d,peri,Ac,L,g,closedornot,N);
 
     # Liquid
     Hₗ = p_fluid.kₗ/d * Nu # Nusselt number given
     X0,dXdt0,realratio = randomXp(tube,numofslugs=slugnum,chargeratio=ch_ratio,σ_charge=σcharge)
-    Xarrays,θarrays = constructXarrays(X0,N,Tref,L);
+    Xarrays,θarrays = constructXarrays(X0,N,Tref,L)
     
-    liquids=Liquid(Hₗ,ρₗ,Cpₗ,αₗ,μₗ,σ,X0,dXdt0,Xarrays,θarrays);
+    liquids=Liquid(Hₗ,ρₗ,Cpₗ,αₗ,μₗ,σ,X0,dXdt0,Xarrays,θarrays)
 
     # Vapor
     @unpack TtoP = propconvert
 
     Lvaporplug = XptoLvaporplug(X0,L,tube.closedornot)
-    P_initial = zero(Lvaporplug) .+ TtoP(Tref);
+    P_initial = zero(Lvaporplug) .+ TtoP(Tref)
     δfilm = δfilm_relative * d/2
-    δstart_initial = zero(Lvaporplug) .+ δfilm ;
-    δend_initial   = zero(Lvaporplug) .+ δfilm ;
+    δstart_initial = zero(Lvaporplug) .+ δfilm
+    δend_initial   = zero(Lvaporplug) .+ δfilm
     Lfilm_start_initial = 0.5 .* film_fraction .* Lvaporplug
     Lfilm_end_initial   = deepcopy(Lfilm_start_initial)
     vapors=Vapor(ad_fac=inertia_f,k = p_fluid.kₗ,P=P_initial,δstart=δstart_initial,δend=δend_initial,Lfilm_start=Lfilm_start_initial,Lfilm_end=Lfilm_end_initial,Eratio_plus=ηplus,Eratio_minus=ηminus);
@@ -149,16 +197,16 @@ function initialize_ohpsys(sys,p_fluid,power;closedornot=true,boil_waiting_time=
     Xstation_time = zeros(nucleatenum);
     boil_type = "wall T"
     boil_interval = boil_waiting_time
-    Xwallarray,θwallarray = constructwallXθarray(arccoord(ohp.shape),Tref);
-    wall = Wall(boil_interval=boil_interval,fluid_type=fluid_type,boil_type=boil_type,power=power,L_newbubble=L_newbubble,Xstations=Xstations,boiltime_stations=Xstation_time,Xarray=Xwallarray,θarray=θwallarray,Rn=Rn_boil);
+    Xwallarray,θwallarray,curvwallarray = constructwallXθarray(arccoord(ohp.shape),Tref,curvature(ohp.shape));
+    wall = Wall(boil_interval=boil_interval,fluid_type=fluid_type,boil_type=boil_type,power=power,L_newbubble=L_newbubble,Xstations=Xstations,boiltime_stations=Xstation_time,Xarray=Xwallarray,θarray=θwallarray,curvarray=curvwallarray,Rn=Rn_boil);
 
     # Mapping
     @unpack x,y = ohp.transform(ohp.shape)
     sys0_nomapping = PHPSystem_nomapping(tube,liquids,vapors,wall,propconvert);
-    θ_interp_walltoliquid, θ_interp_liquidtowall, H_interp_liquidtowall, P_interp_liquidtowall = sys_interpolation(sys0_nomapping)
+    θ_interp_walltoliquid, curv_interp_walltoliquid, θ_interp_liquidtowall, H_interp_liquidtowall, P_interp_liquidtowall = sys_interpolation(sys0_nomapping)
     ht = getgh(g,x,y);
     heightg_interp = LinearInterpolation(Xwallarray,ht,extrapolation_bc = Line())
-    mapping = Mapping(θ_interp_walltoliquid, θ_interp_liquidtowall, H_interp_liquidtowall, P_interp_liquidtowall,heightg_interp);
+    mapping = Mapping(θ_interp_walltoliquid, curv_interp_walltoliquid, θ_interp_liquidtowall, H_interp_liquidtowall, P_interp_liquidtowall,heightg_interp);
 
     # Cache
     Mfilm_left, Mfilm_right = getMfilm(sys0_nomapping)
@@ -170,6 +218,12 @@ function initialize_ohpsys(sys,p_fluid,power;closedornot=true,boil_waiting_time=
     sys0 = PHPSystem(tube,liquids,vapors,wall,propconvert,mapping,cache);
 
     sys0
+end
+
+function _get_ohp_from_forcing_list(sys::ILMSystem)
+    ohp = sys.forcing["heating models"][end] # should be at end of list
+    ohp isa LineForcingModel || error("OHP not in expected place in forcing list")
+    return ohp
 end
 
 
