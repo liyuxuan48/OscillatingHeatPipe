@@ -19,13 +19,11 @@ using ProgressMeter # to have a progress bar in the calculation
 
 ρₛ = 2730; # material density [kg/m^3]
 cₛ  = 8.93e02; # material specific heat [J/kg K]
-kₛ  = 1.93e02; # material heat conductivity
+kₛ  = 1.93e02; # material heat conductivity [W/m K]
 plate_d = 1.5e-3; # effective d (The thickness of an ideal uniform thickness plate occupying the same volume)
 αₛ = kₛ/ρₛ/cₛ
 
-Tref = 291.2 # reference temperature
-fluid_type = "Butane"
-p_fluid = SaturationFluidProperty(fluid_type,Tref) # This function relies on CoolProp.jl package
+Tref = 291.2 # reference temperature [K]
 
 power = 70 # [W], total power
 Lheater_x = 50e-3
@@ -47,12 +45,11 @@ phys_params = Dict( "diffusivity"              => αₛ,
 
 #   ### Fluid Physical parameters
 
-#   pfluid contains the vapor and liquid properties at a constant reference
+#   Here, we set the p_fluid contains the vapor and liquid properties at a constant reference
 #   temperature. Noted that the vapor pressure and the vapor density will be
 #   functions of temperatures during the simulation, other properties are
 #   extracted from pfluid as an approximate value.
 
-Tref = 291.2 # reference temperature
 fluid_type = "Butane"
 p_fluid = SaturationFluidProperty(fluid_type,Tref)
 

@@ -13,9 +13,9 @@ macro mysafetestset(args...)
         ex = quote
           name_str = $$(QuoteNode(name))
           expr_str = $$(QuoteNode(expr))
-          mod = gensym(name_str)
+          mod_name = gensym(name_str)
           ex2 = quote
-              @eval module $mod
+              @eval module $mod_name
                       using Test
                       @testset $name_str $expr_str
                     end
