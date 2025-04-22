@@ -45,8 +45,8 @@ if GROUP == "All" || GROUP == "Literate"
     for file in files
       global file_str = "$file"
       global body = :(begin include(joinpath($root,$file)) end)
-      #endswith(file,".jl") && startswith(file,"OHP DIY.jl") && @mysafetestset file_str body
-      endswith(file,".jl") && @mysafetestset file_str body
+      endswith(file,".jl") && startswith(file,"OHP DIY.jl") && @mysafetestset file_str body
+      #endswith(file,".jl") && @mysafetestset file_str body
     end
   end
 end
