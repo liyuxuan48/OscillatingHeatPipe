@@ -15,20 +15,20 @@ using ProgressMeter # to have a progress bar in the calculation
 
 #   ### Solid Physical parameters
 
-#   The numbers below represent aluminum.
+#   The numbers below represent aluminum alloy 3003
 
 ρₛ = 2730; # material density [kg/m^3]
 cₛ  = 8.93e02; # material specific heat [J/kg K]
 kₛ  = 1.93e02; # material heat conductivity [W/m K]
-plate_d = 1.5e-3; # effective d (The thickness of an ideal uniform thickness plate occupying the same volume)
+plate_d = 1.5e-3; # effective d [m] (The thickness of an ideal uniform thickness plate occupying the same volume)
 αₛ = kₛ/ρₛ/cₛ
 
 Tref = 291.2 # reference temperature [K]
 
 power = 70 # [W], total power
-Lheater_x = 50e-3
-Lheater_y = 50e-3
-areaheater_area = Lheater_x * Lheater_y # [m] total area
+Lheater_x = 50e-3 # [m], length of heater along x axis 
+Lheater_y = 50e-3 # [m], length of heater along y axis
+areaheater_area = Lheater_x * Lheater_y # [m^2] total area
 
 phys_params = Dict( "diffusivity"              => αₛ,
                     "flux_correction"          => ρₛ*cₛ*plate_d,
@@ -163,17 +163,19 @@ x,y, xf, yf = construct_ohp_curve(nturn,pitch,length_ohp,gap,ds,x0,y0,false,fals
 
 plot(x,y,aspectratio=1)
 
-# 
+# Now set the coordinates into a "body", which allows us to transform it in various helpful ways.
+# Here, we will just place it at the origin
 ohp = BasicBody(x,y) # build a BasicBody based on x,y
 tr_ohp = RigidTransform((0.0,0.0),0.0)
 
+# We also need a function that will introduce the OHP heat flux into the plate
 function ohpmodel!(σ,T,t,fr::LineRegionCache,phys_params)
     σ .= phys_params["ohp_flux"] ./ phys_params["flux_correction"] 
 end
 ohp_linesource = LineForcingModel(ohp,tr_ohp,ohpmodel!);
 
 
-#   ### Plot what you got so far
+#   ### Plot what you have so far
 
 #   This is a exmaple of the compuational domain (the box) and the OHP channel
 #   serpentine (in blue)
@@ -192,41 +194,41 @@ forcing_dict = Dict("heating models" => [heater1,cond1,ohp_linesource])
 
 
 #   # Construct the systems
-tspan = (0.0, 1.0); # start time and end time
-dt_record = 0.2   # saving time interval
+# Now we will set up the thermal conduction problem, and then set up the data structures
+# for the plate and OHP channels 
 
+#  ### Set time step
+# We first set the time step size (in seconds), and a function that will supply this time step.
 tstep = 1e-3 
 timestep_fixed(u,sys) = tstep
-prob = NeumannHeatConductionProblem(g,body,scaling=GridScaling,
-                                             phys_params=phys_params,
-                                             bc=bcdict,
-                                             motions=m,
-                                             forcing=forcing_dict,
-                                             timestep_func=timestep_fixed);
 
-#   ### Create HeatConduction system
+# ### Create heat conduction system
+# The solid module dealing with the 2D conduction, evaporator, condenser, and
+# the OHP line heat source is constructed here.
+prob = NeumannHeatConductionProblem(g,body,phys_params=phys_params,
+                                           bc=bcdict,
+                                           motions=m,
+                                           forcing=forcing_dict,
+                                           timestep_func=timestep_fixed);
 
-#   The solid module dealing with the 2D conduction, evaporator, condenser, and
-#   the OHP line heat source is constructed here.
-
+# The `sys_plate` structure contains everything about the plate
 sys_plate = construct_system(prob);
 
-#   ### Create OHP inner channel system
-
-#   sys_tube: fluid module system
+#  ### Create OHP channel system
+#  The `sys_tube` structure contains everything about the OHP channels and fluid
 sys_tube = initialize_ohpsys(sys_plate,p_fluid,power);
 
-#   # Initialize
-
-#   ### set time step
-
-#   ### combine inner tube and plate together
-tspan_init = (0.0,1e4) # for plate, should be a range larger than the TOTAL time you plan to simulate (including saving and re-run),
+#  # Initialize the problem
+# We set intial conditions for the plate and channel here
+# For plate, the time span should be a range larger than the TOTAL time you plan to simulate (including saving and re-run),
 # if the range is smaller than the total time range, there will be errors in temperature interpolations
-
+tspan_init = (0.0,1e4) 
 u_plate = init_sol(sys_plate)# initialize plate T field to uniform Tref
 integrator_plate = init(u_plate,tspan_init,sys_plate,save_on=false) # construct integrator_plate
 
+# Set the tubes time span for simulation and its initial condition
+tspan = (0.0, 1.0); # start time and end time
+dt_record = 0.2   # saving time interval
 u_tube = newstate(sys_tube) # initialize OHP tube
 integrator_tube = init(u_tube,tspan,sys_tube); # construct integrator_tube
 
@@ -234,9 +236,7 @@ integrator_tube = init(u_tube,tspan,sys_tube); # construct integrator_tube
 SimuResult = SimulationResult(integrator_tube,integrator_plate);
 
 #   # Solve
-
-#   ### Run the simulation and store data
-
+#   Run the simulation and store data
 @showprogress for t in tspan[1]:tstep:tspan[2]
 
     timemarching!(integrator_tube,integrator_plate,tstep)
@@ -253,12 +253,13 @@ end
 #save(save_path,"SimulationResult",SimuResult)
 
 # ### take a peek at the solution (more at the PostProcessing notebook)
+# First, a movie of temperature in the plate
 @gif for i in eachindex(SimuResult.tube_hist_t)
     plot(OHPTemp(),i,SimuResult,clim=(291.2,294.0))
     plot!(body,fillalpha=0)
 end
 
-#
+# Show a movie of the channels and the locations of slugs/film vapor/dry vapor
 
 @gif for i in eachindex(SimuResult.tube_hist_t)
     plot(OHPSlug(),i,SimuResult,aspectratio=1)
