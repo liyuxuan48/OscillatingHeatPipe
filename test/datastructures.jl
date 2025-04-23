@@ -1,8 +1,15 @@
+using Statistics
+
 @testset "Liquid and vapor arrays" begin
 
     L, Lmin, ϕ0 = 4.0 + rand(), 0.001, 0.6 + 0.1*rand()
     for closedornot in [true,false]
         X, dXdt, realratio = randomXp(L,Lmin,closedornot;chargeratio=ϕ0)
+
+        # if this is a closed case, then shift it so that the last
+        # slug crosses the line. Ensures more robust testing
+        xshift = closedornot ? L - mean(X[end]) : 0.0
+        X .= map(u -> (mod(u[1]+xshift,L),mod(u[2]+xshift,L)),X)        
 
         lslug = mod.(map(u -> u[2],X) - map(u -> u[1],X),L)
         @test all(lslug .> 0)
@@ -14,8 +21,14 @@
         @test abs(ϕ - ϕ0) < 0.1
         @test ϕ ≈ realratio
 
-        lvap = XptoLvaporplug(X,L,closedornot)
+        Xvapor = OscillatingHeatPipe.getXpvapor(X,closedornot)
+        lvap = mod.(map(u -> u[2],Xvapor) - map(u -> u[1],Xvapor),L)
+        @test all(lvap .> 0)
+
+        lvap2 = OscillatingHeatPipe.XptoLvaporplug(X,L,closedornot)
         
+        @test lvap == lvap2
+
         # Continuity test
         @test sum(lvap) + sum(lslug) ≈ L
 
@@ -48,7 +61,9 @@
         @test Lfilm_start2 == Lfilm_start
         @test Lfilm_end2 == Lfilm_end
 
-        # test a case in which there is one more X and dXdt element than the others 
+        # test a case in which there is one more X and dXdt element than the others
+        # This occurs in an open tube, e.g., vapor plugs at ends and one slug between them
+        # so that Xp contains (0,Xp1) and (Xpn,L) to describe the end vapor plugs.
         X = [(rand(),rand()) for j in 1:np+1]
         dXdt = [(rand(),rand()) for j in 1:np+1]
         u = OscillatingHeatPipe.XMδLtovec(X,dXdt,M,δstart,δend,Lfilm_start,Lfilm_end)
@@ -61,7 +76,21 @@
         @test δend2 == δend
         @test Lfilm_start2 == Lfilm_start
         @test Lfilm_end2 == Lfilm_end
+
+        # Test checking positions in liquid slugs.
+        X, dXdt, realratio = randomXp(L,Lmin,closedornot;chargeratio=ϕ0)
+
+        # Liquid point should return true
+        ir = rand(1:np-1)
+        @test OscillatingHeatPipe.ifamong(mean(X[ir]),X)
+
+        # Vapor point should return false
+        ir = rand(2:np)
+        Xi, Xf = X[ir-1][2], X[ir][1]
+        @test !OscillatingHeatPipe.ifamong(0.5*(Xi+Xf),X)
+
     end
+
 
 end
 

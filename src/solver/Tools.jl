@@ -19,13 +19,18 @@ delta(n) = n != 0
 
 #=
 Some notes on structures of liquid and vapor positions:
+- The Xp is coupled by every liquid slug. For instance, if there is one liquid slug. Xp is a one-element tuple (Xp[1][1], Xp[1][2]).
+    But sometimes we need Xp to be coupled by every vapor plug. For one liquid slug, we have two vapor plugs.
+    So by adding 0 and L at the beginning and the end,
+    we construct a two-element tuple ((0.0,Xp[1][1]) and ((Xp[1][2],L). Generally, for every N-element Xp, we construct an N+1 element Xpvapor
+        Xp    ::   the locations of all interfaces, each element means a liquid slug.
+        L     ::   the length of the 1D tube
 - Xp contains the liquid slug begin/end positions (in arclength). It is arranged as a
   vector of tuples, where the first tuple element is the beginning and second element is
   the end
 - If the tube is periodic, then `tube.closedornot = true` and there are as many vapor plugs as liquid slugs.
   Vapor plug i is bounded by liquid slugs i-1 and i. Plug 1 is bounded by N and 1.
-- If the tube is not periodic, then there is one fewer vapor plugs than liquid slugs. It
-  it assumed that there are liquid slugs at the beginning and end (?). Vapor plug i is bounded
+- If the tube is not periodic, then there is one less vapor plug than liquid slugs. Vapor plug i is bounded
   by slugs i and i+1.
 =#
 
@@ -152,14 +157,7 @@ function XptoLliquidslug(Xp::Vector{Tuple{Float64, Float64}},L::Float64)
     return Lliquidslug
 end
 
-"""
-    The Xp was coupled by every liquid slug. For instance, if there is one liquid slug. Xp is a one-element tuple (Xp[1][1], Xp[1][2]).
-    But sometimes we need Xp to be coupled by every vapor plug. For one liquid slug, we have two vapor plugs.
-    So by adding 0 and L at the beginning and the end,
-    we construct a two-element tuple ((0.0,Xp[1][1]) and ((Xp[1][2],L). Generally, for every N-element Xp, we construct an N+1 element Xpvapor
-        Xp    ::   the locations of all interfaces, each element means a liquid slug.
-        L     ::   the length of the 1D tube
-"""
+
 
 """
     getXpvapor(Xp::Vector{Tuple},closedornot) -> Vector{Tuple}
@@ -193,24 +191,25 @@ function getXpvapor(Xp::Vector{Tuple{Float64, Float64}},closedornot::Bool)
     return Xpvapor
 end
 
-"""
-    This is a function for a closedloop to determine if the value in in the range that crosses the end point
 
-    value ::  a value
-    range ::  an array
 """
+    ifamongone(value::Real,range::Tuple)
 
+Determine if `value` lies between the pair of values in the tuple `range`.
+This accounts for cases in closed tubes in which `range` crosses the branch cut,
+so that the start point in `range` has a larger value than the end point.
+"""
 function ifamongone(value::Float64, range::Tuple{Float64,Float64})
+    # Note: this function does not make use of the tube length, so it might have errors.
+    # It should also be possible to do it faster.
     return ((value >= range[1]) && (value <= range[end])) || ((value <= range[end]) && (range[1] >= range[end])) || ((value >= range[1]) && (range[1] >= range[end])) ? true : false
 end
 
 """
-    This is a general function to determine if the value is in any of an array of range
+    ifamong(value::Real,X::Vector{Tuple})
 
-    value ::  a value
-    range ::  an array of tuple
+Determine if `value` lies between any of the tuples in the vector `X`.
 """
-
 function ifamong(value::Float64, X::Vector{Tuple{Float64,Float64}})
     return Bool(sum(ifamongone.(value,X)) >= 1 ? true : false)
 end
