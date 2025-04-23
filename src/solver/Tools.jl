@@ -32,7 +32,7 @@ Some notes on structures of liquid and vapor positions:
 """
     Xtovec(Xp,dXdt) -> Vector
 
-Transform vectors Xp, dXdt with the coordinates and velocities of the liquid slug interfaces into
+Transform vectors `Xp`, `dXdt` with the coordinates and velocities of the liquid slug interfaces into
 a single state vector 
 """
 function Xtovec(Xp::Array{Tuple{Float64,Float64},1},dXdt::Array{Tuple{Float64,Float64},1})
@@ -54,27 +54,23 @@ end
 
 
 """
-    This function is to transform Xp, dXdt of the interface, and M of the vapor to form our state vector u
-        Xp    ::   the locations of all interfaces
-        dXdt  ::   the 1D velocity of all interfaces
-        M     ::   the mass of all vapors
-        δstart::Array{Float64,1}
-        δend::Array{Float64,1}
-        Lfilm_start::Array{Float64,1}
-        Lfilm_end::Array{Float64,1}
-        Eratio::Array{Float64,1}
+    XMδLtovec(Xp,dXdt,M,δstart,δend,Lfilm_start,Lfilm_end) -> Vector
+
+Assemble vectors `Xp`, `dXdt` of the coordinates and velocities of the slug interfaces, and
+mass `M` of the vapor regions, `δstart` and `δend` of film thicknesses, and `Lfilm_start`
+and `Lfilm_end` of film lengths, to form state vector.
 """
-
 function XMδLtovec(Xp,dXdt,M,δstart,δend,Lfilm_start,Lfilm_end)
-
     return ([Xtovec(Xp,dXdt);M;δstart;δend;Lfilm_start;Lfilm_end])
 end
 
 """
-    This function is to transform Xp, dXdt of the interface, and M of the vapor to form our state vector u
-        u    ::   the dynamic portion of state vector
-"""
+    vectoXMδL(u) -> Vector{Tuple}, Vector{Tuple}, Vector, Vector, Vector, Vector, Vector, Vector, Vector
 
+Disassemble the state vector `u` into vectors `Xp`, `dXdt` of the coordinates and velocities of the slug interfaces, and
+mass `M` of the vapor regions, `δstart` and `δend` of film thicknesses, and `Lfilm_start`
+and `Lfilm_end` of film lengths.
+"""
 function vectoXMδL(u::Array{Float64,1})
 
     maxindex = div(length(u),9)
@@ -140,10 +136,11 @@ function XptoLvaporplug(Xp::Vector{Tuple{Float64, Float64}},L::Float64,closedorn
 end
 
 """
-    This function is to transform Xp of every interface to form an array of liquid length
-        Xp    ::   the locations of all interfaces
-"""
+    XptoLliquidslug(Xp,L) -> Vector{Float64}
 
+This function uses the set of coordinates `Xp` of every liquid/vapor interface,
+and length `L` of the tube to form an array of slug lengths.
+"""
 function XptoLliquidslug(Xp::Vector{Tuple{Float64, Float64}},L::Float64)
 
     Lliquidslug = zeros(length(Xp))
