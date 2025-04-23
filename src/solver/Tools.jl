@@ -223,6 +223,16 @@ end
     L        :: tube length
 """
 
+"""
+    constructXarrays(X::Vector{Tuple},N::Int,θi::Float64,L::Float64) -> Vector, Vector
+
+Initialize the 1D arc coordinate and temperature fields for every liquid slug. The
+number of field points in each slug is never smaller than 2, and set equal to the fraction
+of `N` based on the slug's length relative to `L`. 
+The coordinate array is interpolated between the values in each `X` element (with 
+the branch cut at `L` in a closed tube respected), and the temperature array
+is set to `θi` uniformly. 
+"""
 function constructXarrays(X0::Vector{Tuple{Float64, Float64}},N::Int,θinitial::Float64,L::Float64)
     Xarrays=Array{Array{Float64, 1}, 1}(undef, length(X0))
 

@@ -32,7 +32,30 @@ using Statistics
         # Continuity test
         @test sum(lvap) + sum(lslug) ≈ L
 
+        # Test checking positions in liquid slugs.
         np = length(X)
+
+        # Liquid point should return true
+        ir = rand(1:np-1)
+        @test OscillatingHeatPipe.ifamong(mean(X[ir]),X)
+
+        # Vapor point should return false
+        ir = rand(2:np)
+        Xi, Xf = X[ir-1][2], X[ir][1]
+        @test !OscillatingHeatPipe.ifamong(0.5*(Xi+Xf),X)
+
+        # Test creation of liquid slug arrays
+        N = rand(200:300)
+        θi = rand()
+        Xarray, θarray = OscillatingHeatPipe.constructXarrays(X,N,θi,L)
+        # check that all points lie between 0 and L
+        @test all(map(u -> all(0 .<= u .<= L),Xarray))
+        # both arrays for a slug are the same length
+        @test all(map((u,v) -> length(u)==length(v),Xarray,θarray))
+
+
+        ## test assembly and disassembly 
+        
         dXdt .= [(rand(),rand()) for j in 1:np]
         u = OscillatingHeatPipe.Xtovec(X,dXdt)
 
@@ -42,7 +65,6 @@ using Statistics
         @test u[2*ir] == Xf && u[2*ir-1] == Xi
         @test u[2*np + 2*ir] == dXf && u[2*np + 2*ir - 1] == dXi
 
-        # test assembly and disassembly 
         M = rand(np)
         δstart = rand(np)
         δend = rand(np)
@@ -77,17 +99,7 @@ using Statistics
         @test Lfilm_start2 == Lfilm_start
         @test Lfilm_end2 == Lfilm_end
 
-        # Test checking positions in liquid slugs.
-        X, dXdt, realratio = randomXp(L,Lmin,closedornot;chargeratio=ϕ0)
-
-        # Liquid point should return true
-        ir = rand(1:np-1)
-        @test OscillatingHeatPipe.ifamong(mean(X[ir]),X)
-
-        # Vapor point should return false
-        ir = rand(2:np)
-        Xi, Xf = X[ir-1][2], X[ir][1]
-        @test !OscillatingHeatPipe.ifamong(0.5*(Xi+Xf),X)
+        
 
     end
 
