@@ -30,26 +30,26 @@ Some notes on structures of liquid and vapor positions:
 =#
 
 """
-    This function is to transform Xp, dXdt of the interface, and M of the vapor to form our state vector u
-        Xp    ::   the locations of all interfaces
-        dXdt  ::   the 1D velocity of all interfaces
+    Xtovec(Xp,dXdt) -> Vector
+
+Transform vectors Xp, dXdt with the coordinates and velocities of the liquid slug interfaces into
+a single state vector 
 """
-
-
 function Xtovec(Xp::Array{Tuple{Float64,Float64},1},dXdt::Array{Tuple{Float64,Float64},1})
         
-        u = zeros(4*length(Xp))
+    Np = length(Xp)
+    u = zeros(4*Np)
     
-        for i = 1:length(Xp)
-                # input Xp
-                u[2*i-1] = Xp[i][1]
-                u[2*i] = Xp[i][end]
-                # input dXdt
-                u[2*length(Xp) + 2*i-1] = dXdt[i][1]
-                u[2*length(Xp) + 2*i] = dXdt[i][end]
-        end
+    for i = 1:Np
+        # input Xp
+        u[2*i-1] = Xp[i][1]
+        u[2*i] = Xp[i][end]
+        # input dXdt
+        u[2*Np + 2*i-1] = dXdt[i][1]
+        u[2*Np + 2*i] = dXdt[i][end]
+    end
     
-        return u
+    return u
 end
 
 

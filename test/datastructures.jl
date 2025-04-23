@@ -16,6 +16,14 @@
     # Continuity test
     @test sum(lvap) + sum(lslug) ≈ L
 
+    np = length(X)
+    dXdt .= [(rand(),rand()) for j in 1:np]
+    u = OscillatingHeatPipe.Xtovec(X,dXdt)
+
+    ir = rand(1:np)
+    @test u[2*ir] == X[ir][2] && u[2*ir-1] == X[ir][1]
+    @test u[2*np + 2*ir] == dXdt[ir][2] && u[2*np + 2*ir - 1] == dXdt[ir][1]
+
 
 end
 
