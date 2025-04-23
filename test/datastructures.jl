@@ -71,6 +71,7 @@ using Statistics
         Lfilm_start = rand(np)
         Lfilm_end = rand(np)
         
+        # Test that assembly and disassembly are inverses of each other
         u = OscillatingHeatPipe.XMδLtovec(X,dXdt,M,δstart,δend,Lfilm_start,Lfilm_end)
 
         X2,dXdt2,M2,δstart2,δend2,Lfilm_start2,Lfilm_end2 = OscillatingHeatPipe.vectoXMδL(u)
@@ -102,7 +103,6 @@ using Statistics
         
 
     end
-
 
 end
 

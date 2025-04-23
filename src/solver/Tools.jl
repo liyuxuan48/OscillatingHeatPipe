@@ -215,16 +215,7 @@ function ifamong(value::Float64, X::Vector{Tuple{Float64,Float64}})
 end
 
 """
-    initialize X and θ field for every liquid slugs. return Array{Array{Float64, 1}, 1} and Array{Array{Float64, 1}, 1}
-
-    X0       :: Array{Tuple{Float64,Float64},1}
-    N        :: Int, the number of cells in the wall (ΔX for liquid equals ΔX for the wall)
-    θinitial :: value
-    L        :: tube length
-"""
-
-"""
-    constructXarrays(X::Vector{Tuple},N::Int,θi::Float64,L::Float64) -> Vector, Vector
+    constructXarrays(X::Vector{Tuple},N::Int,θi::Float64,L::Float64) -> Vector{Vector}, Vector{Vector}
 
 Initialize the 1D arc coordinate and temperature fields for every liquid slug. The
 number of field points in each slug is never smaller than 2, and set equal to the fraction
@@ -256,6 +247,15 @@ function constructXarrays(X0::Vector{Tuple{Float64, Float64}},N::Int,θinitial::
     return(Xarrays,θarrays)
 end
 
+"""
+    constructoneXarray(X::Tuple,N::Int,L::Float64) -> Vector
+
+Initialize the 1D arc coordinate and temperature fields for one liquid slug. The
+number of field points in each slug is set equal to `N`. 
+The coordinate array is interpolated between the values in `X` (with 
+the branch cut at `L` in a closed tube respected), and the temperature array
+is set to `θi` uniformly. 
+"""
 function constructoneXarray(X0::Tuple{Float64,Float64},Nliquid,L)
     Xarray=Array{Float64, 1}
 
@@ -281,6 +281,13 @@ end
     L        :: tube length
 """
 
+"""
+    constructwallXθarray(X::Vector,θi::Float64,curv::Vector) -> Vector, Vector, Vector
+
+Return wall vectors for arc length coordinate, temperature, and curvature, given
+the vector `X` for coordinates, a temperature value `θi`, and a vector of curvatures
+`curv` 
+"""
 function constructwallXθarray(line::Vector{Float64},θinitial::Float64,curv::Vector{Float64})
     Xwallarray = deepcopy(line)
     θwallarray = Xwallarray .* 0 .+ θinitial
@@ -316,12 +323,12 @@ function wallθtovec(θwall::Vector{Float64})
 end
 
 """
-    Hfilm(δfilm,sys::PHPSystem)
+    Hfilm(δfilm,sys::PHPSystem) -> Float64
 
 Return the heat transfer coefficient for the film with thickness `δfilm`
 """
 function Hfilm(δfilm,sys)
-    δmin = sys.vapor.δmin;
+    δmin = sys.vapor.δmin
     δthreshold = FILM_THRESHOLD
     δmax = FILM_MAX_THICKNESS
     kₗ   = sys.vapor.k
@@ -339,19 +346,35 @@ function Hfilm(δfilm,sys)
     end
 end
 
+"""
+    getδarea(Ac,d,δ)
+
+Given cross-sectional tube area `Ac`, diameter `d`, and film thickness `δ`,
+return the cross-sectional area of the film. 
+"""
 function getδarea(Ac,d,δ)
     δarea = Ac .* (1 .- ((d .- 2*δ ) ./ d) .^ 2);
 
     δarea
 end
 
+"""
+    getδFromδarea(Ac,d,δarea)
+
+Given cross-sectional tube area `Ac`, diameter `d`, and film cross-sectional
+area `δarea`, return the film thickness. 
+"""
 function getδFromδarea(Ac,d,δarea)
     δ = sqrt(δarea/Ac) * d/2
 
     δ
 end
 
+"""
+    getMvapor(sys::PHPSystem) -> Vector
 
+Return the masses of all of the vapor regions
+"""
 function getMvapor(sys)
 
     @unpack PtoD = sys.propconvert
@@ -376,12 +399,22 @@ function getMvapor(sys)
     Mvapor
 end
 
+"""
+    getVolumevapor(Ac,Astart,Aend,Lvaporplug,Lfilm_start,Lfilm_end) -> Vector
+
+Return the volumes of the vapor regions.
+"""
 function getVolumevapor(Ac,Astart,Aend,Lvaporplug,Lfilm_start,Lfilm_end)
     Volumevapor = Ac .* Lvaporplug - Astart .* Lfilm_start - Aend .* Lfilm_end
 
     Volumevapor
 end
 
+"""
+    getVolumevapor(sys::PHPSystem)
+
+Return the volumes of the vapor regions, given the tube system `sys`.
+"""
 function getVolumevapor(sys)
 
     Ac = sys.tube.Ac
@@ -405,6 +438,11 @@ function getVolumevapor(sys)
     Volumevapor
 end
 
+"""
+    getMfilm(sys::PHPSystem)
+
+Return the masses of all of the liquid films in the system.
+"""
 function getMfilm(sys)
 
     Ac = sys.tube.Ac
@@ -426,6 +464,11 @@ function getMfilm(sys)
     return Mfilm_start, Mfilm_end
 end
 
+"""
+    getMliquid(sys::PHPSystem)
+
+Return the masses of all of the liquid slugs in the system.
+"""
 function getMliquid(sys)
 
     Ac = sys.tube.Ac
@@ -439,14 +482,30 @@ function getMliquid(sys)
     Mliquid
 end
 
+"""
+    getCa(μ,σ,velocity)
+
+Return the capillary numbers for all liquid interfaces
+"""
 function getCa(μ,σ,velocity)
     Ca = abs.(μ.*velocity./σ)
 end
 
+"""
+    filmδcorr(Ca,d)
+
+Return the film thickness of deposited film, based on Aussillous and Quere (2000),
+using the capillary number and diameter.
+"""
 function filmδcorr(Ca,d)
     filmδ = d .* 0.67.*Ca.^(2/3)./(1 .+ 3.35.*Ca.^(2/3))
 end
 
+"""
+    getAdeposit(sys,δdeposit)
+
+Return the cross-sectional areas of deposited films
+"""
 function getAdeposit(sys,δdeposit)
     dXdt= sys.liquid.dXdt
     Ac= sys.tube.Ac
@@ -493,6 +552,11 @@ end
     Adeposit
 end
 
+"""
+    f_churchill(Re,ϵ)
+
+Return the Darcy friction factor, based on the Churchill correlation.
+"""
 function f_churchill(Re,ϵ=0.001)
     Θ1 = (-2.457*log((7/Re)^(0.9)  +  0.27 * ϵ))^16
     Θ2 = (37530/Re)^16
@@ -501,6 +565,13 @@ function f_churchill(Re,ϵ=0.001)
     f
 end
 
+"""
+    Catoδ(d,Ca[;adjust_factor=1,δmin=2e-6,δmax=1e-4])
+
+Given capillary number `Ca` and `d`, return the thickness.
+This is a generalization of the Aussillous and Quere formula.
+It uses an adjustment factor that can be tuned empirically.
+"""
 function Catoδ(d,Ca;adjust_factor=1,δmin=2e-6,δmax=1e-4)
 
     δ = Ca .^ (2/3) ./ (1 .+ Ca .^ (2/3)) .* d ./ 2 .* adjust_factor
@@ -513,6 +584,14 @@ function Catoδ(d,Ca;adjust_factor=1,δmin=2e-6,δmax=1e-4)
     end
 end
 
+
+"""
+    RntoΔT(Rn,Tref,fluid_type,d,TtoP) -> Vector
+
+Given the nucleation radius `Rn`, the fluid type `fluid_type` and reference
+temperature `Tref`, the channel diameter `d`, and the temperature-to-pressure
+relation `TtoP`, return the superheat threshold temperature for boiling.
+"""
 function RntoΔT(Rn,Tref,fluid_type,d,TtoP)
     p_fluid = SaturationFluidProperty(fluid_type,Tref);
 
@@ -524,7 +603,11 @@ function RntoΔT(Rn,Tref,fluid_type,d,TtoP)
     ΔTref = Tref .* (1 ./ (1 .- y) .- 1)
 end
 
+"""
+    systoM(sys::PHPSystem)
 
+Given tube system `sys`, return the masses of the vapor regions.
+"""
 function systoM(sys0::PHPSystem)
 
     @unpack Ac,d,L,closedornot = sys0.tube
