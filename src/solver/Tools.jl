@@ -369,38 +369,16 @@ Return the masses of all of the vapor regions
 """
 function getMvapor(sys)
 
-    @unpack PtoD = sys.propconvert
-    ρᵥ = PtoD.(sys.vapor.P)
-    Ac = sys.tube.Ac
-    δstart = sys.vapor.δstart
-    δend = sys.vapor.δend
-    Lfilm_start = sys.vapor.Lfilm_start
-    Lfilm_end = sys.vapor.Lfilm_end
+    @unpack propconvert, vapor = sys
+    @unpack PtoD = propconvert
+    @unpack P = vapor
 
-    Xp = sys.liquid.Xp
-    L = sys.tube.L
-    d = sys.tube.d
-    closedornot = sys.tube.closedornot
+    ρᵥ = PtoD.(P)
 
-    Lvaporplug = XptoLvaporplug(Xp,L,closedornot)
-    Astart = getδarea.(Ac,d,δstart)
-    Aend = getδarea.(Ac,d,δend)
-
-    Mvapor = ρᵥ .* ((Ac .- Astart) .* Lfilm_start .+ (Ac .- Aend) .* Lfilm_end .+ Ac .* (Lvaporplug .- Lfilm_start .- Lfilm_end))
-
-    Mvapor
+    return ρᵥ .* getVolumevapor(sys)
+    
 end
 
-"""
-    getVolumevapor(Ac,Astart,Aend,Lvaporplug,Lfilm_start,Lfilm_end) -> Vector
-
-Return the volumes of the vapor regions.
-"""
-function getVolumevapor(Ac,Astart,Aend,Lvaporplug,Lfilm_start,Lfilm_end)
-    Volumevapor = Ac .* Lvaporplug - Astart .* Lfilm_start - Aend .* Lfilm_end
-
-    Volumevapor
-end
 
 """
     getVolumevapor(sys::PHPSystem)
@@ -408,27 +386,26 @@ end
 Return the volumes of the vapor regions, given the tube system `sys`.
 """
 function getVolumevapor(sys)
-
-    Ac = sys.tube.Ac
-    δstart = sys.vapor.δstart
-    δend = sys.vapor.δend
-    Lfilm_start = sys.vapor.Lfilm_start
-    Lfilm_end = sys.vapor.Lfilm_end
-
-    Xp = sys.liquid.Xp
-    L = sys.tube.L
-    d = sys.tube.d
-    closedornot = sys.tube.closedornot
-
+    @unpack tube, vapor, liquid = sys
+    @unpack Ac, L, d, closedornot = tube
+    @unpack δstart, δend, Lfilm_start, Lfilm_end = vapor
+    @unpack Xp = liquid
+    
     Lvaporplug = XptoLvaporplug(Xp,L,closedornot)
     Astart = getδarea.(Ac,d,δstart)
     Aend = getδarea.(Ac,d,δend)
     
+    return _getVolumevapor.(Ac,Astart,Aend,Lvaporplug,Lfilm_start,Lfilm_end)
 
-    Volumevapor = Ac .* Lvaporplug - Astart .* Lfilm_start - Aend .* Lfilm_end
+    #Volumevapor = Ac .* Lvaporplug - Astart .* Lfilm_start - Aend .* Lfilm_end
 
-    Volumevapor
+    #Volumevapor
 end
+
+
+_getVolumevapor(Ac,Astart,Aend,Lvaporplug,Lfilm_start,Lfilm_end) = Ac * Lvaporplug - Astart * Lfilm_start - Aend * Lfilm_end
+
+
 
 """
     getMfilm(sys::PHPSystem)
