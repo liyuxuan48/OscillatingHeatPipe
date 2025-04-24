@@ -152,6 +152,7 @@ mutable struct Cache
     mass ::Float64
 end
 
+abstract type AbstractPHP end
 
 """
 PHPSystem is a struct containing
@@ -162,7 +163,7 @@ PHPSystem is a struct containing
     mapping ::Mapping
 """
 
-mutable struct PHPSystem
+mutable struct PHPSystem <: AbstractPHP
     tube    ::Tube
     liquid  ::Liquid
     vapor   ::Vapor
@@ -180,7 +181,7 @@ PHPSystem_nomapping is a struct containing
     Wall
 It is used to construct PHPSystem, no other use.
 """
-mutable struct PHPSystem_nomapping
+mutable struct PHPSystem_nomapping <: AbstractPHP
     tube    ::Tube
     liquid  ::Liquid
     vapor   ::Vapor

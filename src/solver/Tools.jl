@@ -327,12 +327,13 @@ end
 
 Return the heat transfer coefficient for the film with thickness `δfilm`
 """
-function Hfilm(δfilm,sys)
-    δmin = sys.vapor.δmin
+Hfilm(δfilm,sys::AbstractPHP) = Hfilm(δfilm,sys.vapor)
+
+function Hfilm(δfilm,vapor::Vapor)
+    @unpack δmin,k,Hᵥ  = vapor
     δthreshold = FILM_THRESHOLD
     δmax = FILM_MAX_THICKNESS
-    kₗ   = sys.vapor.k
-    Hᵥ  = sys.vapor.Hᵥ
+    kₗ = k
 
     if (δfilm > δthreshold) && (δfilm < δmax)
         return kₗ/δfilm
@@ -345,6 +346,8 @@ function Hfilm(δfilm,sys)
         return 0.0
     end
 end
+
+
 
 """
     getδarea(Ac,d,δ)
@@ -434,7 +437,7 @@ function getMliquid(sys)
 
     Lliquidslug = XptoLliquidslug(Xp,L)
     return  _getM.(ρₗ,Ac,Lliquidslug)
-    
+
 end
 
 _getM(ρₗ,A,L) = ρₗ*A*L
