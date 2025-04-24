@@ -397,13 +397,11 @@ function getVolumevapor(sys)
     
     return _getVolumevapor.(Ac,Astart,Aend,Lvaporplug,Lfilm_start,Lfilm_end)
 
-    #Volumevapor = Ac .* Lvaporplug - Astart .* Lfilm_start - Aend .* Lfilm_end
-
-    #Volumevapor
 end
 
 
-_getVolumevapor(Ac,Astart,Aend,Lvaporplug,Lfilm_start,Lfilm_end) = Ac * Lvaporplug - Astart * Lfilm_start - Aend * Lfilm_end
+_getVolumevapor(Ac,Astart,Aend,Lvaporplug,Lfilm_start,Lfilm_end) = 
+                        Ac * Lvaporplug - Astart * Lfilm_start - Aend * Lfilm_end
 
 
 
@@ -413,24 +411,15 @@ _getVolumevapor(Ac,Astart,Aend,Lvaporplug,Lfilm_start,Lfilm_end) = Ac * Lvaporpl
 Return the masses of all of the liquid films in the system.
 """
 function getMfilm(sys)
-
-    Ac = sys.tube.Ac
-    δstart = sys.vapor.δstart
-    δend = sys.vapor.δend
-    Lfilm_start = sys.vapor.Lfilm_start
-    Lfilm_end = sys.vapor.Lfilm_end
-
-
-    ρₗ = sys.liquid.ρₗ
-    d = sys.tube.d
+    @unpack tube, vapor, liquid = sys
+    @unpack Ac, d = tube
+    @unpack δstart, δend, Lfilm_start, Lfilm_end = vapor
+    @unpack ρₗ = liquid
 
     Astart = getδarea.(Ac,d,δstart)
     Aend = getδarea.(Ac,d,δend)
 
-    Mfilm_start = Astart .* Lfilm_start .* ρₗ
-    Mfilm_end = Aend .* Lfilm_end .* ρₗ
-
-    return Mfilm_start, Mfilm_end
+    return _getM.(ρₗ,Astart,Lfilm_start), _getM.(ρₗ,Aend,Lfilm_end)
 end
 
 """
@@ -439,17 +428,17 @@ end
 Return the masses of all of the liquid slugs in the system.
 """
 function getMliquid(sys)
-
-    Ac = sys.tube.Ac
-    ρₗ = sys.liquid.ρₗ
-    Xp = sys.liquid.Xp
-    L = sys.tube.L
+    @unpack tube, liquid = sys
+    @unpack Ac, L = tube
+    @unpack ρₗ, Xp = liquid
 
     Lliquidslug = XptoLliquidslug(Xp,L)
-    Mliquid = ρₗ .* Ac .* Lliquidslug
-
-    Mliquid
+    return  _getM.(ρₗ,Ac,Lliquidslug)
+    
 end
+
+_getM(ρₗ,A,L) = ρₗ*A*L
+
 
 """
     getCa(μ,σ,velocity)
