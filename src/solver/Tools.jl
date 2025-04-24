@@ -352,7 +352,7 @@ end
 Given cross-sectional tube area `Ac`, diameter `d`, and film thickness `δ`,
 return the cross-sectional area of the film. 
 """
-getδarea(Ac,d,δ) = Ac .* (1 .- ((d .- 2*δ ) ./ d) .^ 2)
+getδarea(Ac,d,δ) = Ac * (1 - ((d - 2*δ ) / d) ^ 2)
 
 """
     getδFromδarea(Ac,d,δarea)
@@ -383,8 +383,8 @@ function getMvapor(sys)
     closedornot = sys.tube.closedornot
 
     Lvaporplug = XptoLvaporplug(Xp,L,closedornot)
-    Astart = getδarea(Ac,d,δstart)
-    Aend = getδarea(Ac,d,δend)
+    Astart = getδarea.(Ac,d,δstart)
+    Aend = getδarea.(Ac,d,δend)
 
     Mvapor = ρᵥ .* ((Ac .- Astart) .* Lfilm_start .+ (Ac .- Aend) .* Lfilm_end .+ Ac .* (Lvaporplug .- Lfilm_start .- Lfilm_end))
 
@@ -421,8 +421,8 @@ function getVolumevapor(sys)
     closedornot = sys.tube.closedornot
 
     Lvaporplug = XptoLvaporplug(Xp,L,closedornot)
-    Astart = getδarea(Ac,d,δstart)
-    Aend = getδarea(Ac,d,δend)
+    Astart = getδarea.(Ac,d,δstart)
+    Aend = getδarea.(Ac,d,δend)
     
 
     Volumevapor = Ac .* Lvaporplug - Astart .* Lfilm_start - Aend .* Lfilm_end
@@ -447,8 +447,8 @@ function getMfilm(sys)
     ρₗ = sys.liquid.ρₗ
     d = sys.tube.d
 
-    Astart = getδarea(Ac,d,δstart)
-    Aend = getδarea(Ac,d,δend)
+    Astart = getδarea.(Ac,d,δstart)
+    Aend = getδarea.(Ac,d,δend)
 
     Mfilm_start = Astart .* Lfilm_start .* ρₗ
     Mfilm_end = Aend .* Lfilm_end .* ρₗ
@@ -512,7 +512,7 @@ function getAdeposit(sys,δdeposit)
 
     # numofliquidslug = length(dXdt)
 
-    δdepositArea = getδarea(Ac,d,δdeposit)
+    δdepositArea = getδarea.(Ac,d,δdeposit)
 
     # Areas of existing films
     δarea_start = Ac .* (1 .- ((d .- 2*δstart) ./ d) .^ 2)
