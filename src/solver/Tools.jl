@@ -352,11 +352,7 @@ end
 Given cross-sectional tube area `Ac`, diameter `d`, and film thickness `δ`,
 return the cross-sectional area of the film. 
 """
-function getδarea(Ac,d,δ)
-    δarea = Ac .* (1 .- ((d .- 2*δ ) ./ d) .^ 2);
-
-    δarea
-end
+getδarea(Ac,d,δ) = Ac .* (1 .- ((d .- 2*δ ) ./ d) .^ 2)
 
 """
     getδFromδarea(Ac,d,δarea)
@@ -364,12 +360,8 @@ end
 Given cross-sectional tube area `Ac`, diameter `d`, and film cross-sectional
 area `δarea`, return the film thickness. 
 """
-function getδFromδarea(Ac,d,δarea)
-    δ = sqrt(δarea/Ac) * d/2
-
-    δ
-end
-
+getδFromδarea(Ac,d,δarea) = sqrt(δarea/Ac) * d/2
+ 
 """
     getMvapor(sys::PHPSystem) -> Vector
 
@@ -502,9 +494,11 @@ function filmδcorr(Ca,d)
 end
 
 """
-    getAdeposit(sys,δdeposit)
+    getAdeposit(sys,δdeposit) -> Vector{Tuple}
 
-Return the cross-sectional areas of deposited films
+Return the cross-sectional areas of deposited films, associated with each liquid slug's
+interfaces. For an open tube, the first and last slugs are stuck at the ends of the tube,
+so the deposited film areas are set to zero and ignored.
 """
 function getAdeposit(sys,δdeposit)
     dXdt= sys.liquid.dXdt
@@ -520,18 +514,23 @@ function getAdeposit(sys,δdeposit)
 
     δdepositArea = getδarea(Ac,d,δdeposit)
 
-    δarea_start = Ac .* (1 .- ((d .- 2*δstart) ./ d) .^ 2);
-    δarea_end = Ac .* (1 .- ((d .- 2*δend) ./ d) .^ 2);
-    # δarea = Ac .* (1 .- ((d .- 2*δ ) ./ d) .^ 2);
+    # Areas of existing films
+    δarea_start = Ac .* (1 .- ((d .- 2*δstart) ./ d) .^ 2)
+    δarea_end = Ac .* (1 .- ((d .- 2*δend) ./ d) .^ 2)
 
 # need to initialize it later on
-    loop_plus_index = [2:Nliquid;1]
+    loop_plus_index = circshift(1:Nliquid,-1)
     Adeposit = deepcopy(dXdt)
 
-# left and right are relative for liquid
+# left and right are relative for liquid. Left = behind, right = ahead
+# if advancing, then use deposited film area. otherwise, existing film area
+
 if closedornot == true
     for i in eachindex(Adeposit)
+
+        # film behind slug. use "end" film from vapor region i if slug not depositing.
         Adeposit_left = dXdt[i][1] > 0 ? δdepositArea : δarea_end[i]
+        # film in front of slug. use "start" film from vapor region i+1 if slug not depositing.
         Adeposit_right = dXdt[i][end] < 0 ? δdepositArea : δarea_start[loop_plus_index[i]]
 
         Adeposit[i]  =   (Adeposit_left, Adeposit_right)
@@ -540,15 +539,15 @@ else
     Adeposit[1] =   (0.0,0.0)
     Adeposit[end] = (0.0,0.0)
     for i in eachindex(Adeposit[2:end-1])
+        # film behind slug. use "end" film from vapor region i if slug not depositing.
         Adeposit_left = dXdt[i][1] > 0 ? δdepositArea : δarea_end[i]
+        # film in front of slug. use "start" film from vapor region i+1 if slug not depositing.
         Adeposit_right = dXdt[i][end] < 0 ? δdepositArea : δarea_start[i+1]
 
         Adeposit[i]  =   (Adeposit_left, Adeposit_right)
     end
 end
 
-# println(δarea_end)
-# println(length(Adeposit))
     Adeposit
 end
 

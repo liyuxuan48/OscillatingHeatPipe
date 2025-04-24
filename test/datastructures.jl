@@ -234,3 +234,40 @@ sys_plate = construct_system(prob)
 
                                                  
 end
+
+sys_tube = initialize_ohpsys(sys_plate,p_fluid,power)
+
+@testset "Film areas" begin
+
+    d = sys_tube.tube.d
+    δstart = sys_tube.vapor.δstart
+    δend = sys_tube.vapor.δend
+    dXdt = sys_tube.liquid.dXdt
+    Ac = sys_tube.tube.Ac
+
+    δdep = 0.05*rand()*d
+
+    δarea_start = Ac .* (1 .- ((d .- 2*δstart) ./ d) .^ 2)
+    δarea_end = Ac .* (1 .- ((d .- 2*δend) ./ d) .^ 2)
+    δarea_dep = Ac .* (1 .- ((d .- 2*δdep) ./ d) .^ 2)
+    @test all(δarea_start .== getδarea.(Ac,d,δstart))
+    @test all(δarea_end .== getδarea.(Ac,d,δend))
+
+    # No slugs are moving. Should only be equal to existing films
+    Adep = getAdeposit(sys_tube,δdep)
+    @test all(map((u,v) -> u[1]==v,Adep,δarea_end))
+    @test all(map((u,v) -> u[2]==v,Adep,circshift(δarea_start,-1)))
+
+    # Left slug interfaces are advancing. Should be equal to deposited film
+    dXdt .= [(0.1,0.0) for i in eachindex(dXdt)]
+    Adep = getAdeposit(sys_tube,δdep)
+    @test all(map(u -> u[1]==δarea_dep,Adep))
+    @test all(map((u,v) -> u[2]==v,Adep,circshift(δarea_start,-1)))
+
+    # Right slug interfaces are advancing. Should be equal to deposited film
+    dXdt .= [(0.0,-0.1) for i in eachindex(dXdt)]
+    Adep = getAdeposit(sys_tube,δdep)
+    @test all(map((u,v) -> u[1]==v,Adep,δarea_end))
+    @test all(map(u -> u[2]==δarea_dep,Adep))
+
+end
