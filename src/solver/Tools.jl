@@ -512,11 +512,12 @@ function getAdeposit(sys,δdeposit)
 
     # numofliquidslug = length(dXdt)
 
+    # Areas of deposited films
     δdepositArea = getδarea.(Ac,d,δdeposit)
 
     # Areas of existing films
-    δarea_start = Ac .* (1 .- ((d .- 2*δstart) ./ d) .^ 2)
-    δarea_end = Ac .* (1 .- ((d .- 2*δend) ./ d) .^ 2)
+    δarea_start = getδarea.(Ac,d,δstart)
+    δarea_end = getδarea.(Ac,d,δend)
 
 # need to initialize it later on
     loop_plus_index = circshift(1:Nliquid,-1)
@@ -616,8 +617,8 @@ function systoM(sys0::PHPSystem)
 
     Lvaporplug = XptoLvaporplug(Xp,L,closedornot)
 
-    δarea_start = Ac .* (1 .- ((d .- 2*δstart) ./ d) .^ 2);
-    δarea_end   = Ac .* (1 .- ((d .- 2*δend)   ./ d) .^ 2);
+    δarea_start = getδarea.(Ac,d,δstart)
+    δarea_end   = getδarea.(Ac,d,δend)
 
     volume_vapor = Lvaporplug .* Ac .- Lfilm_start .* δarea_start .- Lfilm_end .* δarea_end
 
