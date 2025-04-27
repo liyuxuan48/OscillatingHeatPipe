@@ -168,7 +168,8 @@ function initialize_ohpsys(sys::ILMSystem,p_fluid,power;closedornot=DEFAULT_CLOS
 
     # Tube
     ohp = _get_ohp_from_forcing_list(sys)
-    L = arclength(ohp.shape)            # total length of the pipe when streched to a 1D pipe (an approximate here)
+    # L = arclength(ohp.shape)            # total length of the pipe when streched to a 1D pipe (an approximate here)
+    L = maximum([arclength(ohp.shape);arccoord(ohp.shape)])           # I modify this because arclength(ohp.shape) is sometimes smaller than the largest element in arccoord(ohp.shape)
     N = numpts(ohp.shape)                      # number of ohp points
     peri,Ac = peri_Ac(d,tubeshape)
     tube = Tube(d,peri,Ac,L,g,closedornot,N);
