@@ -19,62 +19,63 @@ delta(n) = n != 0
 
 #=
 Some notes on structures of liquid and vapor positions:
+- The Xp is coupled by every liquid slug. For instance, if there is one liquid slug. Xp is a one-element tuple (Xp[1][1], Xp[1][2]).
+    But sometimes we need Xp to be coupled by every vapor plug. For one liquid slug, we have two vapor plugs.
+    So by adding 0 and L at the beginning and the end,
+    we construct a two-element tuple ((0.0,Xp[1][1]) and ((Xp[1][2],L). Generally, for every N-element Xp, we construct an N+1 element Xpvapor
+        Xp    ::   the locations of all interfaces, each element means a liquid slug.
+        L     ::   the length of the 1D tube
 - Xp contains the liquid slug begin/end positions (in arclength). It is arranged as a
   vector of tuples, where the first tuple element is the beginning and second element is
   the end
 - If the tube is periodic, then `tube.closedornot = true` and there are as many vapor plugs as liquid slugs.
   Vapor plug i is bounded by liquid slugs i-1 and i. Plug 1 is bounded by N and 1.
-- If the tube is not periodic, then there is one fewer vapor plugs than liquid slugs. It
-  it assumed that there are liquid slugs at the beginning and end (?). Vapor plug i is bounded
+- If the tube is not periodic, then there is one less vapor plug than liquid slugs. Vapor plug i is bounded
   by slugs i and i+1.
 =#
 
 """
-    This function is to transform Xp, dXdt of the interface, and M of the vapor to form our state vector u
-        Xp    ::   the locations of all interfaces
-        dXdt  ::   the 1D velocity of all interfaces
+    Xtovec(Xp,dXdt) -> Vector
+
+Transform vectors `Xp`, `dXdt` with the coordinates and velocities of the liquid slug interfaces into
+a single state vector 
 """
-
-
 function Xtovec(Xp::Array{Tuple{Float64,Float64},1},dXdt::Array{Tuple{Float64,Float64},1})
         
-        u = zeros(4*length(Xp))
+    Np = length(Xp)
+    u = zeros(4*Np)
     
-        for i = 1:length(Xp)
-                # input Xp
-                u[2*i-1] = Xp[i][1]
-                u[2*i] = Xp[i][end]
-                # input dXdt
-                u[2*length(Xp) + 2*i-1] = dXdt[i][1]
-                u[2*length(Xp) + 2*i] = dXdt[i][end]
-        end
+    for i = 1:Np
+        # input Xp
+        u[2*i-1] = Xp[i][1]
+        u[2*i] = Xp[i][end]
+        # input dXdt
+        u[2*Np + 2*i-1] = dXdt[i][1]
+        u[2*Np + 2*i] = dXdt[i][end]
+    end
     
-        return u
+    return u
 end
 
 
 """
-    This function is to transform Xp, dXdt of the interface, and M of the vapor to form our state vector u
-        Xp    ::   the locations of all interfaces
-        dXdt  ::   the 1D velocity of all interfaces
-        M     ::   the mass of all vapors
-        δstart::Array{Float64,1}
-        δend::Array{Float64,1}
-        Lfilm_start::Array{Float64,1}
-        Lfilm_end::Array{Float64,1}
-        Eratio::Array{Float64,1}
+    XMδLtovec(Xp,dXdt,M,δstart,δend,Lfilm_start,Lfilm_end) -> Vector
+
+Assemble vectors `Xp`, `dXdt` of the coordinates and velocities of the slug interfaces, and
+mass `M` of the vapor regions, `δstart` and `δend` of film thicknesses, and `Lfilm_start`
+and `Lfilm_end` of film lengths, to form state vector.
 """
-
 function XMδLtovec(Xp,dXdt,M,δstart,δend,Lfilm_start,Lfilm_end)
-
     return ([Xtovec(Xp,dXdt);M;δstart;δend;Lfilm_start;Lfilm_end])
 end
 
 """
-    This function is to transform Xp, dXdt of the interface, and M of the vapor to form our state vector u
-        u    ::   the dynamic portion of state vector
-"""
+    vectoXMδL(u) -> Vector{Tuple}, Vector{Tuple}, Vector, Vector, Vector, Vector, Vector, Vector, Vector
 
+Disassemble the state vector `u` into vectors `Xp`, `dXdt` of the coordinates and velocities of the slug interfaces, and
+mass `M` of the vapor regions, `δstart` and `δend` of film thicknesses, and `Lfilm_start`
+and `Lfilm_end` of film lengths.
+"""
 function vectoXMδL(u::Array{Float64,1})
 
     maxindex = div(length(u),9)
@@ -140,10 +141,11 @@ function XptoLvaporplug(Xp::Vector{Tuple{Float64, Float64}},L::Float64,closedorn
 end
 
 """
-    This function is to transform Xp of every interface to form an array of liquid length
-        Xp    ::   the locations of all interfaces
-"""
+    XptoLliquidslug(Xp,L) -> Vector{Float64}
 
+This function uses the set of coordinates `Xp` of every liquid/vapor interface,
+and length `L` of the tube to form an array of slug lengths.
+"""
 function XptoLliquidslug(Xp::Vector{Tuple{Float64, Float64}},L::Float64)
 
     Lliquidslug = zeros(length(Xp))
@@ -155,14 +157,7 @@ function XptoLliquidslug(Xp::Vector{Tuple{Float64, Float64}},L::Float64)
     return Lliquidslug
 end
 
-"""
-    The Xp was coupled by every liquid slug. For instance, if there is one liquid slug. Xp is a one-element tuple (Xp[1][1], Xp[1][2]).
-    But sometimes we need Xp to be coupled by every vapor plug. For one liquid slug, we have two vapor plugs.
-    So by adding 0 and L at the beginning and the end,
-    we construct a two-element tuple ((0.0,Xp[1][1]) and ((Xp[1][2],L). Generally, for every N-element Xp, we construct an N+1 element Xpvapor
-        Xp    ::   the locations of all interfaces, each element means a liquid slug.
-        L     ::   the length of the 1D tube
-"""
+
 
 """
     getXpvapor(Xp::Vector{Tuple},closedornot) -> Vector{Tuple}
@@ -196,37 +191,39 @@ function getXpvapor(Xp::Vector{Tuple{Float64, Float64}},closedornot::Bool)
     return Xpvapor
 end
 
-"""
-    This is a function for a closedloop to determine if the value in in the range that crosses the end point
 
-    value ::  a value
-    range ::  an array
 """
+    ifamongone(value::Real,range::Tuple)
 
+Determine if `value` lies between the pair of values in the tuple `range`.
+This accounts for cases in closed tubes in which `range` crosses the branch cut,
+so that the start point in `range` has a larger value than the end point.
+"""
 function ifamongone(value::Float64, range::Tuple{Float64,Float64})
+    # Note: this function does not make use of the tube length, so it might have errors.
+    # It should also be possible to do it faster.
     return ((value >= range[1]) && (value <= range[end])) || ((value <= range[end]) && (range[1] >= range[end])) || ((value >= range[1]) && (range[1] >= range[end])) ? true : false
 end
 
 """
-    This is a general function to determine if the value is in any of an array of range
+    ifamong(value::Real,X::Vector{Tuple})
 
-    value ::  a value
-    range ::  an array of tuple
+Determine if `value` lies between any of the tuples in the vector `X`.
 """
-
 function ifamong(value::Float64, X::Vector{Tuple{Float64,Float64}})
     return Bool(sum(ifamongone.(value,X)) >= 1 ? true : false)
 end
 
 """
-    initialize X and θ field for every liquid slugs. return Array{Array{Float64, 1}, 1} and Array{Array{Float64, 1}, 1}
+    constructXarrays(X::Vector{Tuple},N::Int,θi::Float64,L::Float64) -> Vector{Vector}, Vector{Vector}
 
-    X0       :: Array{Tuple{Float64,Float64},1}
-    N        :: Int, the number of cells in the wall (ΔX for liquid equals ΔX for the wall)
-    θinitial :: value
-    L        :: tube length
+Initialize the 1D arc coordinate and temperature fields for every liquid slug. The
+number of field points in each slug is never smaller than 2, and set equal to the fraction
+of `N` based on the slug's length relative to `L`. 
+The coordinate array is interpolated between the values in each `X` element (with 
+the branch cut at `L` in a closed tube respected), and the temperature array
+is set to `θi` uniformly. 
 """
-
 function constructXarrays(X0::Vector{Tuple{Float64, Float64}},N::Int,θinitial::Float64,L::Float64)
     Xarrays=Array{Array{Float64, 1}, 1}(undef, length(X0))
 
@@ -250,6 +247,15 @@ function constructXarrays(X0::Vector{Tuple{Float64, Float64}},N::Int,θinitial::
     return(Xarrays,θarrays)
 end
 
+"""
+    constructoneXarray(X::Tuple,N::Int,L::Float64) -> Vector
+
+Initialize the 1D arc coordinate and temperature fields for one liquid slug. The
+number of field points in each slug is set equal to `N`. 
+The coordinate array is interpolated between the values in `X` (with 
+the branch cut at `L` in a closed tube respected), and the temperature array
+is set to `θi` uniformly. 
+"""
 function constructoneXarray(X0::Tuple{Float64,Float64},Nliquid,L)
     Xarray=Array{Float64, 1}
 
@@ -275,6 +281,13 @@ end
     L        :: tube length
 """
 
+"""
+    constructwallXθarray(X::Vector,θi::Float64,curv::Vector) -> Vector, Vector, Vector
+
+Return wall vectors for arc length coordinate, temperature, and curvature, given
+the vector `X` for coordinates, a temperature value `θi`, and a vector of curvatures
+`curv` 
+"""
 function constructwallXθarray(line::Vector{Float64},θinitial::Float64,curv::Vector{Float64})
     Xwallarray = deepcopy(line)
     θwallarray = Xwallarray .* 0 .+ θinitial
@@ -310,16 +323,17 @@ function wallθtovec(θwall::Vector{Float64})
 end
 
 """
-    Hfilm(δfilm,sys::PHPSystem)
+    Hfilm(δfilm,sys::PHPSystem) -> Float64
 
 Return the heat transfer coefficient for the film with thickness `δfilm`
 """
-function Hfilm(δfilm,sys)
-    δmin = sys.vapor.δmin;
+Hfilm(δfilm,sys::AbstractPHP) = Hfilm(δfilm,sys.vapor)
+
+function Hfilm(δfilm,vapor::Vapor)
+    @unpack δmin,k,Hᵥ  = vapor
     δthreshold = FILM_THRESHOLD
     δmax = FILM_MAX_THICKNESS
-    kₗ   = sys.vapor.k
-    Hᵥ  = sys.vapor.Hᵥ
+    kₗ = k
 
     if (δfilm > δthreshold) && (δfilm < δmax)
         return kₗ/δfilm
@@ -333,114 +347,128 @@ function Hfilm(δfilm,sys)
     end
 end
 
-function getδarea(Ac,d,δ)
-    δarea = Ac .* (1 .- ((d .- 2*δ ) ./ d) .^ 2);
-
-    δarea
-end
-
-function getδFromδarea(Ac,d,δarea)
-    δ = sqrt(δarea/Ac) * d/2
-
-    δ
-end
 
 
+"""
+    getδarea(Ac,d,δ)
+
+Given cross-sectional tube area `Ac`, diameter `d`, and film thickness `δ`,
+return the cross-sectional area of the film. 
+"""
+getδarea(Ac,d,δ) = Ac * (1 - ((d - 2*δ ) / d) ^ 2)
+
+"""
+    getδFromδarea(Ac,d,δarea)
+
+Given cross-sectional tube area `Ac`, diameter `d`, and film cross-sectional
+area `δarea`, return the film thickness. 
+"""
+getδFromδarea(Ac,d,δarea) = sqrt(δarea/Ac) * d/2
+ 
+"""
+    getMvapor(sys::PHPSystem) -> Vector
+
+Return the masses of all of the vapor regions
+"""
 function getMvapor(sys)
 
-    @unpack PtoD = sys.propconvert
-    ρᵥ = PtoD.(sys.vapor.P)
-    Ac = sys.tube.Ac
-    δstart = sys.vapor.δstart
-    δend = sys.vapor.δend
-    Lfilm_start = sys.vapor.Lfilm_start
-    Lfilm_end = sys.vapor.Lfilm_end
+    @unpack propconvert, vapor = sys
+    @unpack PtoD = propconvert
+    @unpack P = vapor
 
-    Xp = sys.liquid.Xp
-    L = sys.tube.L
-    d = sys.tube.d
-    closedornot = sys.tube.closedornot
+    ρᵥ = PtoD.(P)
 
-    Lvaporplug = XptoLvaporplug(Xp,L,closedornot)
-    Astart = getδarea(Ac,d,δstart)
-    Aend = getδarea(Ac,d,δend)
-
-    Mvapor = ρᵥ .* ((Ac .- Astart) .* Lfilm_start .+ (Ac .- Aend) .* Lfilm_end .+ Ac .* (Lvaporplug .- Lfilm_start .- Lfilm_end))
-
-    Mvapor
-end
-
-function getVolumevapor(Ac,Astart,Aend,Lvaporplug,Lfilm_start,Lfilm_end)
-    Volumevapor = Ac .* Lvaporplug - Astart .* Lfilm_start - Aend .* Lfilm_end
-
-    Volumevapor
-end
-
-function getVolumevapor(sys)
-
-    Ac = sys.tube.Ac
-    δstart = sys.vapor.δstart
-    δend = sys.vapor.δend
-    Lfilm_start = sys.vapor.Lfilm_start
-    Lfilm_end = sys.vapor.Lfilm_end
-
-    Xp = sys.liquid.Xp
-    L = sys.tube.L
-    d = sys.tube.d
-    closedornot = sys.tube.closedornot
-
-    Lvaporplug = XptoLvaporplug(Xp,L,closedornot)
-    Astart = getδarea(Ac,d,δstart)
-    Aend = getδarea(Ac,d,δend)
+    return ρᵥ .* getVolumevapor(sys)
     
-
-    Volumevapor = Ac .* Lvaporplug - Astart .* Lfilm_start - Aend .* Lfilm_end
-
-    Volumevapor
 end
 
+
+"""
+    getVolumevapor(sys::PHPSystem)
+
+Return the volumes of the vapor regions, given the tube system `sys`.
+"""
+function getVolumevapor(sys)
+    @unpack tube, vapor, liquid = sys
+    @unpack Ac, L, d, closedornot = tube
+    @unpack δstart, δend, Lfilm_start, Lfilm_end = vapor
+    @unpack Xp = liquid
+    
+    Lvaporplug = XptoLvaporplug(Xp,L,closedornot)
+    Astart = getδarea.(Ac,d,δstart)
+    Aend = getδarea.(Ac,d,δend)
+    
+    return _getVolumevapor.(Ac,Astart,Aend,Lvaporplug,Lfilm_start,Lfilm_end)
+
+end
+
+
+_getVolumevapor(Ac,Astart,Aend,Lvaporplug,Lfilm_start,Lfilm_end) = 
+                        Ac * Lvaporplug - Astart * Lfilm_start - Aend * Lfilm_end
+
+
+
+"""
+    getMfilm(sys::PHPSystem)
+
+Return the masses of all of the liquid films in the system.
+"""
 function getMfilm(sys)
+    @unpack tube, vapor, liquid = sys
+    @unpack Ac, d = tube
+    @unpack δstart, δend, Lfilm_start, Lfilm_end = vapor
+    @unpack ρₗ = liquid
 
-    Ac = sys.tube.Ac
-    δstart = sys.vapor.δstart
-    δend = sys.vapor.δend
-    Lfilm_start = sys.vapor.Lfilm_start
-    Lfilm_end = sys.vapor.Lfilm_end
+    Astart = getδarea.(Ac,d,δstart)
+    Aend = getδarea.(Ac,d,δend)
 
-
-    ρₗ = sys.liquid.ρₗ
-    d = sys.tube.d
-
-    Astart = getδarea(Ac,d,δstart)
-    Aend = getδarea(Ac,d,δend)
-
-    Mfilm_start = Astart .* Lfilm_start .* ρₗ
-    Mfilm_end = Aend .* Lfilm_end .* ρₗ
-
-    return Mfilm_start, Mfilm_end
+    return _getM.(ρₗ,Astart,Lfilm_start), _getM.(ρₗ,Aend,Lfilm_end)
 end
 
-function getMliquid(sys)
+"""
+    getMliquid(sys::PHPSystem)
 
-    Ac = sys.tube.Ac
-    ρₗ = sys.liquid.ρₗ
-    Xp = sys.liquid.Xp
-    L = sys.tube.L
+Return the masses of all of the liquid slugs in the system.
+"""
+function getMliquid(sys)
+    @unpack tube, liquid = sys
+    @unpack Ac, L = tube
+    @unpack ρₗ, Xp = liquid
 
     Lliquidslug = XptoLliquidslug(Xp,L)
-    Mliquid = ρₗ .* Ac .* Lliquidslug
+    return  _getM.(ρₗ,Ac,Lliquidslug)
 
-    Mliquid
 end
 
+_getM(ρₗ,A,L) = ρₗ*A*L
+
+
+"""
+    getCa(μ,σ,velocity)
+
+Return the capillary numbers for all liquid interfaces
+"""
 function getCa(μ,σ,velocity)
     Ca = abs.(μ.*velocity./σ)
 end
 
+"""
+    filmδcorr(Ca,d)
+
+Return the film thickness of deposited film, based on Aussillous and Quere (2000),
+using the capillary number and diameter.
+"""
 function filmδcorr(Ca,d)
     filmδ = d .* 0.67.*Ca.^(2/3)./(1 .+ 3.35.*Ca.^(2/3))
 end
 
+"""
+    getAdeposit(sys,δdeposit) -> Vector{Tuple}
+
+Return the cross-sectional areas of deposited films, associated with each liquid slug's
+interfaces. For an open tube, the first and last slugs are stuck at the ends of the tube,
+so the deposited film areas are set to zero and ignored.
+"""
 function getAdeposit(sys,δdeposit)
     dXdt= sys.liquid.dXdt
     Ac= sys.tube.Ac
@@ -453,20 +481,26 @@ function getAdeposit(sys,δdeposit)
 
     # numofliquidslug = length(dXdt)
 
-    δdepositArea = getδarea(Ac,d,δdeposit)
+    # Areas of deposited films
+    δdepositArea = getδarea.(Ac,d,δdeposit)
 
-    δarea_start = Ac .* (1 .- ((d .- 2*δstart) ./ d) .^ 2);
-    δarea_end = Ac .* (1 .- ((d .- 2*δend) ./ d) .^ 2);
-    # δarea = Ac .* (1 .- ((d .- 2*δ ) ./ d) .^ 2);
+    # Areas of existing films
+    δarea_start = getδarea.(Ac,d,δstart)
+    δarea_end = getδarea.(Ac,d,δend)
 
 # need to initialize it later on
-    loop_plus_index = [2:Nliquid;1]
+    loop_plus_index = circshift(1:Nliquid,-1)
     Adeposit = deepcopy(dXdt)
 
-# left and right are relative for liquid
+# left and right are relative for liquid. Left = behind, right = ahead
+# if advancing, then use deposited film area. otherwise, existing film area
+
 if closedornot == true
     for i in eachindex(Adeposit)
+
+        # film behind slug. use "end" film from vapor region i if slug not depositing.
         Adeposit_left = dXdt[i][1] > 0 ? δdepositArea : δarea_end[i]
+        # film in front of slug. use "start" film from vapor region i+1 if slug not depositing.
         Adeposit_right = dXdt[i][end] < 0 ? δdepositArea : δarea_start[loop_plus_index[i]]
 
         Adeposit[i]  =   (Adeposit_left, Adeposit_right)
@@ -475,18 +509,23 @@ else
     Adeposit[1] =   (0.0,0.0)
     Adeposit[end] = (0.0,0.0)
     for i in eachindex(Adeposit[2:end-1])
+        # film behind slug. use "end" film from vapor region i if slug not depositing.
         Adeposit_left = dXdt[i][1] > 0 ? δdepositArea : δarea_end[i]
+        # film in front of slug. use "start" film from vapor region i+1 if slug not depositing.
         Adeposit_right = dXdt[i][end] < 0 ? δdepositArea : δarea_start[i+1]
 
         Adeposit[i]  =   (Adeposit_left, Adeposit_right)
     end
 end
 
-# println(δarea_end)
-# println(length(Adeposit))
     Adeposit
 end
 
+"""
+    f_churchill(Re,ϵ)
+
+Return the Darcy friction factor, based on the Churchill correlation.
+"""
 function f_churchill(Re,ϵ=0.001)
     Θ1 = (-2.457*log((7/Re)^(0.9)  +  0.27 * ϵ))^16
     Θ2 = (37530/Re)^16
@@ -495,6 +534,13 @@ function f_churchill(Re,ϵ=0.001)
     f
 end
 
+"""
+    Catoδ(d,Ca[;adjust_factor=1,δmin=2e-6,δmax=1e-4])
+
+Given capillary number `Ca` and `d`, return the thickness.
+This is a generalization of the Aussillous and Quere formula.
+It uses an adjustment factor that can be tuned empirically.
+"""
 function Catoδ(d,Ca;adjust_factor=1,δmin=2e-6,δmax=1e-4)
 
     δ = Ca .^ (2/3) ./ (1 .+ Ca .^ (2/3)) .* d ./ 2 .* adjust_factor
@@ -507,6 +553,14 @@ function Catoδ(d,Ca;adjust_factor=1,δmin=2e-6,δmax=1e-4)
     end
 end
 
+
+"""
+    RntoΔT(Rn,Tref,fluid_type,d,TtoP) -> Vector
+
+Given the nucleation radius `Rn`, the fluid type `fluid_type` and reference
+temperature `Tref`, the channel diameter `d`, and the temperature-to-pressure
+relation `TtoP`, return the superheat threshold temperature for boiling.
+"""
 function RntoΔT(Rn,Tref,fluid_type,d,TtoP)
     p_fluid = SaturationFluidProperty(fluid_type,Tref);
 
@@ -518,7 +572,11 @@ function RntoΔT(Rn,Tref,fluid_type,d,TtoP)
     ΔTref = Tref .* (1 ./ (1 .- y) .- 1)
 end
 
+"""
+    systoM(sys::PHPSystem)
 
+Given tube system `sys`, return the masses of the vapor regions.
+"""
 function systoM(sys0::PHPSystem)
 
     @unpack Ac,d,L,closedornot = sys0.tube
@@ -528,8 +586,8 @@ function systoM(sys0::PHPSystem)
 
     Lvaporplug = XptoLvaporplug(Xp,L,closedornot)
 
-    δarea_start = Ac .* (1 .- ((d .- 2*δstart) ./ d) .^ 2);
-    δarea_end   = Ac .* (1 .- ((d .- 2*δend)   ./ d) .^ 2);
+    δarea_start = getδarea.(Ac,d,δstart)
+    δarea_end   = getδarea.(Ac,d,δend)
 
     volume_vapor = Lvaporplug .* Ac .- Lfilm_start .* δarea_start .- Lfilm_end .* δarea_end
 

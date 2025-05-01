@@ -32,8 +32,8 @@ function dynamicsmodel(u::Array{Float64,1},p::PHPSystem)
     Adeposit_right = [elem[2] for elem in Adeposit]
 
     # get actrual liquid film area
-    Astart = getδarea(Ac,d,δstart)
-    Aend = getδarea(Ac,d,δend)
+    Astart = getδarea.(Ac,d,δstart)
+    Aend = getδarea.(Ac,d,δend)
 
     Lvaporplug = XptoLvaporplug(Xp,L,closedornot)
     Lliquidslug = XptoLliquidslug(Xp,L)

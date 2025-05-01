@@ -1,7 +1,7 @@
 export boiling_affect!,nucleateboiling,boiling_condition
 # boiling_condition,
 function boiling_condition(u,t,integrator)
-    t_interval = 1e-2
+    t_interval = BOILING_T_INTERVAL
 
     ϵ = 1e-5
 
@@ -14,70 +14,52 @@ function boiling_affect!(integrator)
 
     p = deepcopy(getcurrentsys!(integrator.u,integrator.p))
 
-    boil_type = p.wall.boil_type
-    fluid_type = p.propconvert.fluid_type
-    d = p.tube.d
-    Rn = p.wall.Rn
-    boil_interval = p.wall.boil_interval
+    @unpack wall, propconvert, tube, vapor, liquid = p
+    @unpack fluid_type, PtoT, TtoP, PtoD = propconvert
+    @unpack boil_type, boil_interval, Rn, Xstations, boiltime_stations, L_newbubble = wall
+    @unpack d = tube
+    @unpack P = vapor
+    @unpack Xp, dXdt = liquid
 
-    @unpack PtoT,TtoP,PtoD = p.propconvert
-    Tref = (PtoT.(maximum(p.vapor.P)) + PtoT.(minimum(p.vapor.P)))/2
+    Tref = (PtoT.(maximum(P)) + PtoT.(minimum(P)))/2
 
     Δθthreshold = RntoΔT(Rn,Tref,fluid_type,d,TtoP)
 
     # println(Δθthreshold)
   
-    Δθ_array = getsuperheat.(p.wall.Xstations,[p])
+    Δθ_array = getsuperheat.(Xstations,Ref(p))
     superheat_flag = (Δθ_array .> Δθthreshold) .* ((integrator.t .- p.wall.boiltime_stations) .> boil_interval)
 
     # println(p.wall.boiltime_stations)
     b_count = 0;
-    boiltime_update_flags = Bool.(zero(p.wall.boiltime_stations))
-    for i = 1:length(p.wall.Xstations)
-        if ifamong(p.wall.Xstations[i], p.liquid.Xp) && suitable_for_boiling(p,i) && superheat_flag[i]
+    boiltime_update_flags = Bool.(zero(boiltime_stations))
+    for i = 1:length(Xstations)
+        if ifamong(Xstations[i], Xp) && suitable_for_boiling(p,i) && superheat_flag[i]
                 push!(integrator.p.cache.boil_hist,[i,integrator.t]);
                 b_count += 1;
 
                 if boil_type == "liquid T"
-                    Pinsert = p.mapping.P_interp_liquidtowall(p.wall.Xstations[i])
+                    Pinsert = p.mapping.P_interp_liquidtowall(Xstations[i])
                 elseif boil_type == "wall T"
-                    Pinsert = TtoP(p.mapping.θ_interp_walltoliquid(p.wall.Xstations[i]))
+                    Pinsert = TtoP(p.mapping.θ_interp_walltoliquid(Xstations[i]))
                 end
                 # println("boiling",get_vapor_energy(p)+get_liquid_energy(p))
-                p = nucleateboiling(p,(p.wall.Xstations[i]-p.wall.L_newbubble/2,p.wall.Xstations[i]+p.wall.L_newbubble/2),Pinsert) # P need to be given from energy equation
+                p = nucleateboiling(p,(Xstations[i]-L_newbubble/2,Xstations[i]+L_newbubble/2),Pinsert) # P need to be given from energy equation
                 # println("boiling",get_vapor_energy(p)+get_liquid_energy(p))
                 boiltime_update_flags[i] = true
                 # p.wall.boiltime_stations[i] = integrator.t
-            elseif !ifamong(p.wall.Xstations[i], p.liquid.Xp)
+            elseif !ifamong(Xstations[i], p.liquid.Xp)
                 boiltime_update_flags[i] = true
                 # p.wall.boiltime_stations[i] = integrator.t
         end
     end
 
-    boiltime_stations = p.wall.boiltime_stations + boiltime_update_flags .* (integrator.t .- p.wall.boiltime_stations)
-    integrator.p.wall.boiltime_stations = boiltime_stations
+    boiltime_stations_new = boiltime_stations + boiltime_update_flags .* (integrator.t .- boiltime_stations)
+    integrator.p.wall.boiltime_stations = boiltime_stations_new
     
+    M = getMvapor(p)
 
-    Lvaporplug = XptoLvaporplug(p.liquid.Xp,p.tube.L,p.tube.closedornot)
-    Ac = p.tube.Ac
-    d = p.tube.d
-
-    δstart = p.vapor.δstart
-    δend = p.vapor.δend
-
-    Lfilm_start = p.vapor.Lfilm_start
-    Lfilm_end = p.vapor.Lfilm_end
-
-    δarea_start = Ac .* (1 .- ((d .- 2*δstart) ./ d) .^ 2);
-    δarea_end = Ac .* (1 .- ((d .- 2*δend) ./ d) .^ 2);
-
-    volume_vapor = Lvaporplug .* Ac - Lfilm_start .* δarea_start - Lfilm_end .* δarea_end
-    M = PtoD.(p.vapor.P) .* volume_vapor
-
-    # println(p.wall.boiltime_stations)
-
-
-    unew=[XMδLtovec(p.liquid.Xp,p.liquid.dXdt,M,p.vapor.δstart,δend,Lfilm_start,Lfilm_end);liquidθtovec(p.liquid.θarrays)];
+    unew=[XMδLtovec(p.liquid.Xp,p.liquid.dXdt,M,p.vapor.δstart,p.vapor.δend,p.vapor.Lfilm_start,p.vapor.Lfilm_end);liquidθtovec(p.liquid.θarrays)];
 
     resize!(integrator.u,length(unew))
     integrator.u = deepcopy(unew)
