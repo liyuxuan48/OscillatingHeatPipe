@@ -46,13 +46,19 @@ function dynamicsmodel(u::Array{Float64,1},p::PHPSystem)
 
     Xpvapor = getXpvapor(Xp,closedornot)
 
+    # get fractional curvature for each liquid slug 
+    
+    #Need to get fraction of curvature for each liquid slug; make a function that calculates this? 
+
     # get differential equation factors
     curv_interp = sys.mapping.curv_interp_walltoliquid
     lhs = ρₗ*Ac .* Lliquidslug
     rhs_press = Ac ./ lhs
     Re_list = ρₗ .* abs.(V) .* d ./ μₗ
     f_coefficient = f_churchill.(Re_list .+ 1e-4)
+    f_coefficient_bend = f_coefficient.*f_bend
     dXdt_to_stress = -0.125 .* f_coefficient .* ρₗ .* V .* abs.(V)
+    #r_coefficient is used in dXdt_to_stress which is then used in rhs_dXdt
     rhs_dXdt = peri .* Lliquidslug .* dXdt_to_stress ./ lhs
     rhs_g = Ac*ρₗ ./ lhs
 
@@ -60,7 +66,7 @@ function dynamicsmodel(u::Array{Float64,1},p::PHPSystem)
     L0threshold_film = 0.15*L_newbubble
     L0threshold_pure_vapor = 0.5*L_newbubble
 
-    if closedornot == false
+    if closedornot == false  #closed OHP
         numofvaporbubble = numofliquidslug - 1
 
         # initialize liquid and vapor velocities for left(smaller ξ) and right(larger ξ) side
@@ -150,7 +156,7 @@ function dynamicsmodel(u::Array{Float64,1},p::PHPSystem)
 
     end
 
-    if closedornot == true
+    if closedornot == true  #open OHP
 
         numofvaporbubble = numofliquidslug
 

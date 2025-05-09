@@ -3,7 +3,7 @@ XptoLvaporplug,XptoLliquidslug,getXpvapor, # transfer Xp to the length of vapors
 # ifamong,constructXarrays,
 duliquidθtovec,duwallθtovec,liquidθtovec,wallθtovec, # transfer temperature field to state vector for liquid and wall.
 Hfilm,getδarea,getδFromδarea,getMvapor,getMfilm,getMliquid,getVolumevapor,
-getCa,filmδcorr,getAdeposit,f_churchill,Catoδ,RntoΔT,systoM
+getCa,filmδcorr,getAdeposit,f_churchill,Catoδ,RntoΔT,systoM,r_bend,f_bend
 
 function getgvec(g0::T,g_angle::T=3/2*π) where {T<:Real}
     g = g0*[cos(g_angle),sin(g_angle)]
@@ -463,6 +463,16 @@ function filmδcorr(Ca,d)
 end
 
 """
+    r_bend(n_turn, width_ohp)
+
+Approximates the bend radius for a given number of turns and OHP width
+NOTE: in this code nchannels = 2*nturns + 2 
+"""
+function r_bend(nturn, width_ohp)
+    r = width_ohp/(4*nturn + 2)
+end 
+
+"""
     getAdeposit(sys,δdeposit) -> Vector{Tuple}
 
 Return the cross-sectional areas of deposited films, associated with each liquid slug's
@@ -533,6 +543,19 @@ function f_churchill(Re,ϵ=0.001)
     
     f
 end
+
+"""
+    f_bend(Re,d,r_bend) 
+
+Returns a multiplier for the friction factor in bends, based on Ito ().
+NOTE: only laminar friction factor is implemented; uses Dean (De) number  
+""" 
+function f_bend(Re,d=0.001,r_bend) 
+    De = Re*sqrt(d/(2*r_bend))
+
+    f = 0.1008*De^(0.5)*(1+3.945*De^(-0.5)+7.782*De^(-1)+9.097*De^(-1.5)+5.608*De^(-2))
+    f
+end 
 
 """
     Catoδ(d,Ca[;adjust_factor=1,δmin=2e-6,δmax=1e-4])
