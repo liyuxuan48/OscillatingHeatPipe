@@ -1,243 +1,249 @@
-#   # DIY
+#   # DIY Geometry And Channel Design
 
-#   This notebook shows how to customize the heater/condenser and ohp configuration
+#   This notebook shows how to build a custom OHP setup by defining the plate
+#   boundary, heater/condenser regions, and OHP channel path directly.
+
+#   ### What do we need to customize an OHP problem?
+
+#   **specify properties** : Solid property, fluid property, heater power, and
+#   condenser strength
+#
+#   **set the geometries** : A custom plate polygon, heater/condenser patches,
+#   and an OHP channel path
+#
+#   **construct the systems** : Fluid system (1D) and heat-conduction system
+#   (2D)
+#
+#   **initialize** : Build the integrators and the data structure for saving
+#
+#   **solve** : March the coupled tube and plate systems forward in time
+#
+#   **save/examine** : Save the data and preview the custom result
 
 #   # Packages
 
-#   Firstly, let's import the necessary packages, you may need to install them
-#   for the first time.
+# Load the OHP package and plotting/progress utilities used throughout the notebook.
 
 using OscillatingHeatPipe # our main package
 using Plots # for plotting
 using ProgressMeter # to have a progress bar in the calculation
 using JLD2 # to save and load data
 
-#   # Specify properties
+#   # Specify Properties
 
-#   ### Solid Physical parameters
+#   ### Solid Physical Parameters
 
-#   The numbers below represent aluminum alloy 3003
+# Define aluminum plate material properties and compute the thermal diffusivity used by the immersed-layer heat-conduction model.
 
 ρₛ = 2730; # material density [kg/m^3]
 cₛ  = 8.93e02; # material specific heat [J/kg K]
 kₛ  = 1.93e02; # material heat conductivity [W/m K]
-plate_d = 1.5e-3; # effective d [m] (The thickness of an ideal uniform thickness plate occupying the same volume)
+plate_d = 1.5e-3; # effective plate thickness [m]
 αₛ = kₛ/ρₛ/cₛ
 
 Tref = 291.2 # reference temperature [K]
+power = 4 # total heater power [W]
 
-power = 40 # [W], total power
-Lheater_x = 50e-3 # [m], length of heater along x axis 
-Lheater_y = 50e-3 # [m], length of heater along y axis
-areaheater_area = Lheater_x * Lheater_y # [m^2] total area
+#   ### Fluid Physical Parameters
 
-phys_params = Dict( "diffusivity"              => αₛ,
-                    "flux_correction"          => ρₛ*cₛ*plate_d,
-                    "Fourier"                  => 1.0,
-                    "ohp_flux"                 => [NaN], # initial value, the value here is useless
-                    "areaheater_power"         => power, # total power
-                    "areaheater_area"          => areaheater_area, # total area
-                    "areaheater_temp"          => 0.0,   # relative temperature compared with "background temperature"
-                    "areaheater_coeff"         => 4000.0,
-                    "background temperature"   => Tref
-                     )
-
-
-
-#   ### Fluid Physical parameters
-
-#   Here, we set the p_fluid contains the vapor and liquid properties at a constant reference
-#   temperature. Noted that the vapor pressure and the vapor density will be
-#   functions of temperatures during the simulation, other properties are
-#   extracted from pfluid as an approximate value.
+# Set the working fluid and construct the saturation-property helper used by the one-dimensional tube model.
 
 fluid_type = "Butane"
 p_fluid = SaturationFluidProperty(fluid_type,Tref)
 
-#   # Set the geometries
+#   # Set The Geometry
 
-#   ### Geometry parameters
+#   ### Grid And Plate Boundary
 
-#   The 2D domain is of rectangular shape (slightly different from ASETS-II). In
-#   the future it can be of arbitrary shape using the immersedlayers.jl package.
+# Create a slightly oversized computational grid and a deliberately irregular polygonal plate that still encloses the heaters, condensers, and tilted OHP channel.
 
-Δx = 0.0007 # [m] # grid size, at the same order of 1D OHP channel node spacing ~ 0.001[m]
-Lx = 6*INCHES*1.02; # plate size x [m]
-Ly = 2*INCHES*1.05; # plate size y [m]
-xlim = (-Lx/2,Lx/2) # plate x limits
-ylim = (-Ly/2,Ly/2) # plate y limits
+Δx = 0.0007 # [m]
+Lx = 6.0INCHES
+Ly = 2.2INCHES
+xlim = (-0.68Lx,0.68Lx)
+ylim = (-1.08Ly,0.86Ly)
 
-g = PhysicalGrid(1.03 .* xlim,1.1 .* ylim,Δx) # build a gird slightly larger than the plate
-
-xbound = [ -Lx/2,-Lx/2,
-            Lx/2, Lx/2] # x coordinates of the shape
-
-ybound = [  Ly/2,-Ly/2,
-           -Ly/2, Ly/2] # y coordinates of the shape
-
+g = PhysicalGrid(1.04 .* xlim,1.08 .* ylim,Δx)
 Δs = 1.4*cellsize(g)
+
+xbound = [
+    -0.62Lx, -0.67Lx, -0.56Lx, -0.20Lx,
+     0.10Lx,  0.45Lx,  0.66Lx,  0.61Lx,
+     0.32Lx, -0.05Lx, -0.42Lx
+]
+ybound = [
+     0.52Ly, -0.08Ly, -0.84Ly, -1.00Ly,
+    -0.64Ly, -0.90Ly, -0.32Ly,  0.48Ly,
+     0.76Ly,  0.62Ly,  0.70Ly
+]
 body = Polygon(xbound,ybound,Δs)
 
-X = MotionTransform([0,0],0) # move the plate or rotate the plate
+# Create a stationary rigid-body motion object for the irregular plate boundary.
+
+X = MotionTransform([0,0],0)
 joint = Joint(X)
 m = RigidBodyMotion(joint,body)
-x = zero_motion_state(body,m)
-update_body!(body,x,m)
+x_motion = zero_motion_state(body,m)
+update_body!(body,x_motion,m)
+
+# Define zero-flux boundary-condition functions for the exterior and interior immersed boundaries.
 
 function get_qbplus(t,x,base_cache,phys_params,motions)
-    nrm = normals(base_cache)
     qbplus = zeros_surface(base_cache)
     return qbplus
 end
 
 function get_qbminus(t,x,base_cache,phys_params,motions)
-    nrm = normals(base_cache)
     qbminus = zeros_surface(base_cache)
     return qbminus
 end
 
 bcdict = Dict("exterior" => get_qbplus,"interior" => get_qbminus)
 
+#   # Set Up Heaters And Condensers
 
-#   # Set up the evaporators and condensers
+# Collect the physical parameters passed into the heat-conduction system, including the total heater area and condenser coefficient.
 
-#   In the "OHP simulation" notebook, I use "OHPtype" to look up a preset dictionary of OHP evaporators and condensers.
+heater_size = (0.62INCHES,0.48INCHES)
+areaheater_area = prod(heater_size)
 
-#   You can also customize them, following the procedure below in this notebook.
+phys_params = Dict( "diffusivity"              => αₛ,
+                    "flux_correction"          => ρₛ*cₛ*plate_d,
+                    "Fourier"                  => 1.0,
+                    "ohp_flux"                 => [NaN],
+                    "areaheater_power"         => power,
+                    "areaheater_area"          => areaheater_area,
+                    "areaheater_temp"          => 0.0,
+                    "areaheater_coeff"         => 3600.0,
+                    "background temperature"   => Tref
+                     )
 
-#   Firstly let's give the total heater power
+# Define the area-source models for heater input and condenser cooling.
 
 function heatermodel!(σ,T,t,fr::AreaRegionCache,phys_params)
-    σ .= phys_params["areaheater_power"] / phys_params["areaheater_area"] / phys_params["flux_correction"] 
+    σ .= phys_params["areaheater_power"] / phys_params["areaheater_area"] / phys_params["flux_correction"]
 end
 
 function condensermodel!(σ,T,t,fr::AreaRegionCache,phys_params)
     T0 = phys_params["areaheater_temp"]
     h = phys_params["areaheater_coeff"]
-    corr = phys_params["flux_correction"] 
+    corr = phys_params["flux_correction"]
 
     σ .= h*(T0 - T) / corr
 end
 
+# Create one tilted heater patch and place it in the lower-left part of the irregular plate.
 
-# Then let's construct a heater
-eb1 = Rectangle(Lheater_x/2,Lheater_x/2,1.4*Δx)
-tr1_h = RigidTransform((0.0,-0.0),0.0)
-heater1 = AreaForcingModel(eb1,tr1_h,heatermodel!);
+heater_body = Rectangle(heater_size[1],heater_size[2],1.4*Δx)
+heater_transform = RigidTransform((0.38INCHES,-0.30INCHES),π/10)
+heater = AreaForcingModel(heater_body,heater_transform,heatermodel!)
 
+# Create one tilted condenser patch on the opposite side of the plate.
 
-# Then let's consctruct a condenser
-Lcondenser_x = 15e-3
-Lcondenser_y = 1.0INCHES
-cb1 = Rectangle(Lcondenser_x,Lcondenser_y,1.4*Δx)
-tr1_c = RigidTransform((2.4INCHES,-0.0),0.0)
-cond1 = AreaForcingModel(cb1,tr1_c,condensermodel!);
+condenser_body = Rectangle(0.36INCHES,1.02INCHES,1.4*Δx)
+condenser_transform = RigidTransform((1.95INCHES,0.05INCHES),π/10)
+condenser = AreaForcingModel(condenser_body,condenser_transform,condensermodel!)
 
-# # Set up OHP channel's shape
+#   # Set Up The OHP Channel Shape
 
-# Similarly, In the "OHP simulation" notebook, I used **construct_ohp_curve("ASETS",Δx)** to look up a preset dictionary of ASETS-II OHP.
+# First, build a fully custom curve from arrays. This is a quick way to sketch an unusual channel before choosing the final simulation path.
 
-# You can customize the ohp curve in either of the two ways:
-
-#  1. simply supply two arrays of x and y of the same length:
-
-a = 0.03
-θ = 0:2π/1000:2π
-r = a*sin.(2θ)
+a = 0.018
+θ = 0:2π/800:2π
+r = a .* (1 .+ 0.28cos.(5θ)) .* sin.(2θ)
 x = r .* cos.(θ)
-y = r .* sin.(θ);
+y = 0.72r .* sin.(θ)
 
 plot(x,y,aspectratio=1)
 
-# 2. **construct_ohp_curve(nturn, pitch, height, gap, ds, x0, y0, flipx, flipy, angle)**, a built-in function to generate a closed loop multi-turn channel
+# Next, use the built-in multi-turn generator, but tilt the channel so it sits diagonally inside the strange polygonal plate.
 
-ds = 1.5Δx # point interval
-nturn = 9 # number of turns
-width_ohp = 46.25*1e-3
-length_ohp = 147.0*1e-3
-gap = 3e-3 # gap between the closed loop end to the channel(not the distance between each channels)
-pitch = width_ohp/(2*nturn+1) # pitch between channels
-rotation_angle = 3π/2
-x0, y0 = length_ohp/2 + 2e-3, width_ohp/2
+ds = 1.5Δx
+nturn = 7
+width_ohp = 38e-3
+length_ohp = 125e-3
+gap = 3.2e-3
+pitch = width_ohp/(2*nturn+1)
+rotation_angle = -5π/9
+x0, y0 = length_ohp/2 - 4e-3, width_ohp/2 - 5e-2
 
-x,y, xf, yf = construct_ohp_curve(nturn,pitch,length_ohp,gap,ds,x0,y0,false,false,rotation_angle)
+x,y, xf, yf = construct_ohp_curve(nturn,pitch,length_ohp,gap,ds,x0,y0,false,true,rotation_angle)
 
 plot(x,y,aspectratio=1)
 
-# Now set the coordinates into a "body", which allows us to transform it in various helpful ways.
-# Here, we will just place it at the origin
-ohp = BasicBody(x,y) # build a BasicBody based on x,y
-tr_ohp = RigidTransform((0.0,0.0),0.0)
+# Convert the generated coordinates into a BasicBody and shift the tilted channel slightly off center.
 
-# We also need a function that will introduce the OHP heat flux into the plate
+ohp = BasicBody(x,y)
+tr_ohp = RigidTransform((-0.10INCHES,0.05INCHES),0.0)
+
+# Define the line-source model that injects the tube-to-plate heat flux into the solid problem.
+
 function ohpmodel!(σ,T,t,fr::LineRegionCache,phys_params)
-    σ .= phys_params["ohp_flux"] ./ phys_params["flux_correction"] 
+    σ .= phys_params["ohp_flux"] ./ phys_params["flux_correction"]
 end
-ohp_linesource = LineForcingModel(ohp,tr_ohp,ohpmodel!);
+ohp_linesource = LineForcingModel(ohp,tr_ohp,ohpmodel!)
 
+#   ### Plot The Full Custom Layout
 
-#   ### Plot what you have so far
-
-#   This is a exmaple of the compuational domain (the box) and the OHP channel
-#   serpentine (in blue)
+# Plot the irregular plate, heater, condenser, and tilted OHP channel together for visual inspection.
 
 plot(body,fillalpha=0)
-update_body!(eb1,tr1_h)
-update_body!(cb1,tr1_c)
-plot!(eb1)
-plot!(cb1)
+update_body!(heater_body,heater_transform)
+update_body!(condenser_body,condenser_transform)
+plot!(heater_body,fillcolor=:red,fillalpha=0.5)
+plot!(condenser_body,fillcolor=:blue,fillalpha=0.5)
 update_body!(ohp,tr_ohp)
-
 plot!(ohp,fillalpha=0,closedornot=true)
 
-#  Assemble into a forcing list
-forcing_dict = Dict("heating models" => [heater1,cond1,ohp_linesource]) 
+# Assemble all thermal forcing models into the dictionary expected by the heat-conduction problem.
 
+forcing_dict = Dict("heating models" => [heater,condenser,ohp_linesource])
 
-#   # Construct the systems
-# Now we will set up the thermal conduction problem, and then set up the data structures
-# for the plate and OHP channels 
+#   # Construct The Systems
 
-#  ### Set time step
-# We first set the time step size (in seconds), and a function that will supply this time step.
-tstep = 4e-4 
+# Set the coupled time-step size and define the fixed time-step callback used by the plate solver.
+
+tstep = 4e-4
 timestep_fixed(u,sys) = tstep
 
-# ### Create heat conduction system
-# The solid module dealing with the 2D conduction, evaporator, condenser, and
-# the OHP line heat source is constructed here.
+# Construct the Neumann heat-conduction problem using the custom geometry, boundary conditions, and forcing models.
+
 prob = NeumannHeatConductionProblem(g,body,phys_params=phys_params,
                                            bc=bcdict,
                                            motions=m,
                                            forcing=forcing_dict,
-                                           timestep_func=timestep_fixed);
+                                           timestep_func=timestep_fixed)
 
-# The `sys_plate` structure contains everything about the plate
-sys_plate = construct_system(prob);
+# Build the concrete two-dimensional plate system.
 
-#  ### Create OHP channel system
-#  The `sys_tube` structure contains everything about the OHP channels and fluid
-sys_tube = initialize_ohpsys(sys_plate,p_fluid,power);
+sys_plate = construct_system(prob)
 
-#  # Initialize the problem
-# We set intial conditions for the plate and channel here
-# For plate, the time span should be a range larger than the TOTAL time you plan to simulate (including saving and re-run),
-# if the range is smaller than the total time range, there will be errors in temperature interpolations
-tspan_init = (0.0,1e4) 
-u_plate = init_sol(sys_plate)# initialize plate T field to uniform Tref
-integrator_plate = init(u_plate,tspan_init,sys_plate,save_on=false) # construct integrator_plate
+# Initialize the one-dimensional OHP tube system using the custom plate system.
 
-# Set the tubes time span for simulation and its initial condition
-tspan = (0.0, 5.0); # start time and end time
-dt_record = 0.2   # saving time interval
-u_tube = newstate(sys_tube) # initialize OHP tube
-integrator_tube = init(u_tube,tspan,sys_tube); # construct integrator_tube
+sys_tube = initialize_ohpsys(sys_plate,p_fluid,power)
 
-#   ### initialize arrays for saving
-SimuResult = SimulationResult(integrator_tube,integrator_plate);
+#   # Initialize The Problem
+
+# Create initial states and ODE integrators for the plate and tube systems.
+
+tspan = (0.0,0.2)
+dt_record = 0.01
+
+tspan_init = (0.0,1e4)
+u_plate = init_sol(sys_plate)
+integrator_plate = init(u_plate,tspan_init,sys_plate,save_on=false)
+
+u_tube = newstate(sys_tube)
+integrator_tube = init(u_tube,tspan,sys_tube)
+
+# Create the SimulationResult container that stores snapshots for plotting and post-processing.
+
+SimuResult = SimulationResult(integrator_tube,integrator_plate)
 
 #   # Solve
-#   Run the simulation and store data
+
+# Advance the coupled tube and plate systems in time and store snapshots at the requested interval.
+
 @showprogress for t in tspan[1]:tstep:tspan[2]
 
     timemarching!(integrator_tube,integrator_plate,tstep)
@@ -248,23 +254,23 @@ SimuResult = SimulationResult(integrator_tube,integrator_plate);
 
 end
 
-  # Store data
+#   # Store Data
 
-save_path = "solution.jld2"
+# Save the custom-geometry simulation result for later inspection.
+
+save_path = "../numedata/DIY.jld2"
 save(save_path,"SimulationResult",SimuResult)
 
-# # Read data
-# load_path = "solution.jld2"
-# load(load_path,"SimulationResult")
+#   ### Preview The Solution
 
-# ### take a peek at the solution (more at the PostProcessing notebook)
-# First, a movie of temperature in the plate
+# Generate an animation of plate temperature over time with the strange polygon boundary overlaid.
+
 @gif for i in eachindex(SimuResult.tube_hist_t)
     plot(OHPTemp(),i,SimuResult,clim=(291.2,294.0))
     plot!(body,fillalpha=0)
 end
 
-# Show a movie of the channels and the locations of slugs/film vapor/dry vapor
+# Generate an animation of the slug distribution over time with the tilted OHP channel and plate boundary overlaid.
 
 @gif for i in eachindex(SimuResult.tube_hist_t)
     plot(OHPSlug(),i,SimuResult,aspectratio=1)
