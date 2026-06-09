@@ -35,6 +35,15 @@ notebookdir = "../examples"
 docdir = "../docs/src/manual"
 litdir = "./literate"
 
+function use_stable_literate_sandbox!()
+  @eval Literate function sandbox()
+      m = Core.eval(Main, :(module NotebookSandbox end))
+      Core.eval(m, :(eval(x) = Core.eval($m, x)))
+      Core.eval(m, :(include(x) = Base.include($m, x)))
+      return m
+  end
+end
+
 if GROUP == "All" || GROUP == "Auxiliary"
     include("thermomodel.jl")
     include("correlations.jl")
@@ -55,18 +64,7 @@ end
 
 
 if GROUP == "Notebooks"
-  # Literate's default sandbox is `Module(gensym())`, so each notebook executes in a
-  # uniquely-named module (Main.##NNN). Functions saved into a JLD2 file (e.g. the BC/forcing
-  # callbacks held by the integrator in `OHP simulation.jl`) get serialized under that module
-  # name, and a later notebook (`PostProcessing-oneresult.jl`) cannot resolve them on load.
-  # Override the sandbox to a fresh-but-stably-named module so each file still runs clean while
-  # JLD2 always stores/resolves the callbacks under `Main.NotebookSandbox.*`.
-  @eval Literate function sandbox()
-      m = Core.eval(Main, :(module NotebookSandbox end))  # fresh module, stable name Main.NotebookSandbox
-      Core.eval(m, :(eval(x) = Core.eval($m, x)))
-      Core.eval(m, :(include(x) = Base.include($m, x)))
-      return m
-  end
+  use_stable_literate_sandbox!()
   for (root, dirs, files) in walkdir(litdir)
     for file in sort(files)
       # endswith(file,".jl") && startswith(file,"OHP DIY.jl") && Literate.notebook(joinpath(root, file),notebookdir)
@@ -77,8 +75,8 @@ end
 
 if GROUP == "Documentation"
   for (root, dirs, files) in walkdir(litdir)
-    for file in files
-      endswith(file,".jl") && Literate.markdown(joinpath(root, file),docdir; execute=false)
+    for file in sort(files)
+      endswith(file,".jl") && Literate.markdown(joinpath(root, file),docdir; execute=false, flavor=Literate.CommonMarkFlavor())
     end
   end
 end

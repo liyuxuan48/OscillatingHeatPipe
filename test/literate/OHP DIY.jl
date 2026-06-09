@@ -226,7 +226,7 @@ sys_tube = initialize_ohpsys(sys_plate,p_fluid,power)
 
 # Create initial states and ODE integrators for the plate and tube systems.
 
-tspan = (0.0,0.2)
+tspan = (0.0,0.5)
 dt_record = 0.01
 
 tspan_init = (0.0,1e4)

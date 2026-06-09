@@ -206,8 +206,8 @@ forcing_dict = Dict("heating models" => [heater1,heater2,cond1,cond2,ohp_linesou
 
 # Set the simulation time span, output interval, and coupled marching step size.
 
-tspan = (0.0, 1.0); # start time and end time
-dt_record = 0.01   # saving time interval
+tspan = (0.0, 5.0); # start time and end time
+dt_record = 0.02   # saving time interval
 
 tstep = 4e-4     # actrual time marching step
 

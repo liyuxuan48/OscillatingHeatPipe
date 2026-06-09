@@ -2,7 +2,10 @@ using Documenter
 
 makedocs(
     sitename = "OscillatingHeatPipe",
-    format = Documenter.HTML(),
+    format = Documenter.HTML(
+        size_threshold = 10 * 1024 * 1024,
+        size_threshold_warn = 5 * 1024 * 1024,
+    ),
     # modules = [OscillatingHeatPipe],
     pages = [
         "Home" => "index.md",
@@ -12,13 +15,12 @@ makedocs(
     ]
 )
 
-# Documenter can also automatically deploy documentation to gh-pages.
-# See "Hosting Documentation" and deploydocs() in the Documenter manual
-# for more information.
-deploydocs(
-    repo = "github.com/liyuxuan48/OscillatingHeatPipe.jl.git",
-    target = "build",
-    deps = nothing,
-    make = nothing,
-    versions = nothing
-)
+if get(ENV, "CI", "false") == "true"
+    deploydocs(
+        repo = "github.com/liyuxuan48/OscillatingHeatPipe.jl.git",
+        devbranch = "lyx-readme",
+        target = "build",
+        deps = nothing,
+        make = nothing,
+    )
+end

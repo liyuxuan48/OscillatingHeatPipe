@@ -105,7 +105,7 @@ t_hist,g_hist = getTcurve(plate_sensors,SimuResult);
 #   Read the ASETS-II experimental RTD data when it is available. If the file is missing or cannot be
 #   parsed, the notebook continues with numerical results only.
 
-expfile = expfileDict["O002_H001_P040"]
+expfile = expfileDict["O001_H001_P040"]
 exppaths = (
     joinpath("expdata", expfile),
     joinpath("..", "expdata", expfile),

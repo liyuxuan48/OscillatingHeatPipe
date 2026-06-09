@@ -206,6 +206,7 @@ end
     ohp = ohp_model.transform(ohp_model.shape)
     
     # seriestype --> :heatmap
+    aspectratio --> 1
     xlabel --> "x [m]"
     ylabel --> "y [m]"
     fillalpha := 0
@@ -285,6 +286,7 @@ end
     ohp = ohp_model.transform(ohp_model.shape)
     
     # seriestype --> :heatmap
+    aspectratio --> 1
     xlabel --> "x [m]"
     ylabel --> "y [m]"
     fillalpha := 0

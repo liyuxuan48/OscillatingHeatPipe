@@ -13,6 +13,7 @@ todo
 
 # Documentation
 docs/build/
+docs/src/manual/*.md
 # Mac temporaries
 *.DS_Store
 # package logo
