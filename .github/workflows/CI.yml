@@ -28,4 +28,34 @@ jobs:
       - uses: codecov/codecov-action@v1
         with:
           file: lcov.info
-  
+
+  docs:
+    name: Documentation
+    needs: test
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: julia-actions/setup-julia@v2
+        with:
+          version: '1.11'
+      - uses: julia-actions/cache@v2
+      - name: Generate literate pages
+        run: |
+          julia --project=test/ -e '
+            using Pkg;
+            Pkg.develop(PackageSpec(path=pwd()));
+            Pkg.instantiate()'
+          cd test
+          GROUP=Documentation julia --project=. runtests.jl
+      - name: Install dependencies
+        run: |
+          julia --project=docs/ -e '
+            using Pkg;
+            Pkg.instantiate()'
+      - name: Build and deploy
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: julia --project=docs/ docs/make.jl
