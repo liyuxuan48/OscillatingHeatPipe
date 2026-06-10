@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Post-Processing · OscillatingHeatPipe</title><meta name="title" content="Post-Processing · OscillatingHeatPipe"/><meta property="og:title" content="Post-Processing · OscillatingHeatPipe"/><meta property="twitter:title" content="Post-Processing · OscillatingHeatPipe"/><meta name="description" content="Documentation for OscillatingHeatPipe."/><meta property="og:description" content="Documentation for OscillatingHeatPipe."/><meta property="twitter:description" content="Documentation for OscillatingHeatPipe."/><script data-outdated-warner src="../../assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.050/juliamono.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.8/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../search_index.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-mocha.css" data-theme-name="catppuccin-mocha"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-macchiato.css" data-theme-name="catppuccin-macchiato"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-frappe.css" data-theme-name="catppuccin-frappe"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-latte.css" data-theme-name="catppuccin-latte"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><div class="docs-package-name"><span class="docs-autofit"><a href="../../">OscillatingHeatPipe</a></span></div><button class="docs-search-query input is-rounded is-small is-clickable my-2 mx-auto py-1 px-2" id="documenter-search-query">Search docs (Ctrl + /)</button><ul class="docs-menu"><li><a class="tocitem" href="../../">Home</a></li><li><a class="tocitem" href="../OHP simulation/">Simulation</a></li><li class="is-active"><a class="tocitem" href>Post-Processing</a><ul class="internal"><li class="toplevel"><a class="tocitem" href="#Read-Simulation-Data"><span>Read Simulation Data</span></a></li><li class="toplevel"><a class="tocitem" href="#Plot-2D-Graphs"><span>Plot 2D Graphs</span></a></li><li class="toplevel"><a class="tocitem" href="#Plot-2D-Interpolated-Curves"><span>Plot 2D Interpolated Curves</span></a></li><li class="toplevel"><a class="tocitem" href="#Plot-1D-Interpolated-Curves"><span>Plot 1D Interpolated Curves</span></a></li><li class="toplevel"><a class="tocitem" href="#Plot-1D-Property-Curves-For-Fixed-Location-Sensors"><span>Plot 1D Property Curves For Fixed Location Sensors</span></a></li><li class="toplevel"><a class="tocitem" href="#Boiling-Statistics"><span>Boiling Statistics</span></a></li></ul></li><li><a class="tocitem" href="../OHP DIY/">OHP-DIY</a></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><a class="docs-sidebar-button docs-navbar-link fa-solid fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a><nav class="breadcrumb"><ul class="is-hidden-mobile"><li class="is-active"><a href>Post-Processing</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Post-Processing</a></li></ul></nav><div class="docs-right"><a class="docs-navbar-link" href="https://github.com/liyuxuan48/OscillatingHeatPipe.jl" title="View the repository on GitHub"><span class="docs-icon fa-brands"></span><span class="docs-label is-hidden-touch">GitHub</span></a><a class="docs-navbar-link" href="https://github.com/liyuxuan48/OscillatingHeatPipe.jl/blob/main/docs/src/manual/PostProcessing-oneresult.md" title="Edit source on GitHub"><span class="docs-icon fa-solid"></span></a><a class="docs-settings-button docs-navbar-link fa-solid fa-gear" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-article-toggle-button fa-solid fa-chevron-up" id="documenter-article-toggle-button" href="javascript:;" title="Collapse all docstrings"></a></div></header><article class="content" id="documenter-page"><h1 id="PostProcessing"><a class="docs-heading-anchor" href="#PostProcessing">PostProcessing</a><a id="PostProcessing-1"></a><a class="docs-heading-anchor-permalink" href="#PostProcessing" title="Permalink"></a></h1><p>This notebook is initially designed for post-processing ASETS-II numerical and experimental data.   It can also be used for other configurations&#39;s numerical results. If you want to compare with   experimental data in a different format, customize the section that reads <code>RTD</code> and <code>RTDt</code>.</p><p>Load the OHP package and the plotting/data-file utilities used in this notebook.</p><pre><code class="language-julia hljs">using OscillatingHeatPipe
+using Plots
+using JLD2
+using XLSX</code></pre><h1 id="Read-Simulation-Data"><a class="docs-heading-anchor" href="#Read-Simulation-Data">Read Simulation Data</a><a id="Read-Simulation-Data-1"></a><a class="docs-heading-anchor-permalink" href="#Read-Simulation-Data" title="Permalink"></a></h1><p>Choose the saved simulation result file. The notebook expects this file to exist before   post-processing begins.</p><pre><code class="language-julia hljs">read_path = joinpath(&quot;../numedata&quot;,&quot;example.jld2&quot;)</code></pre><p>Define the boundary-condition callbacks needed when the saved <code>SimulationResult</code> is reconstructed   from the JLD2 file.</p><pre><code class="language-julia hljs">tstep = 4e-4
+
+function get_qbplus(t,x,base_cache,phys_params,motions)
+    nrm = normals(base_cache)
+    qbplus = zeros_surface(base_cache)
+    return qbplus
+end
+
+function get_qbminus(t,x,base_cache,phys_params,motions)
+    nrm = normals(base_cache)
+    qbminus = zeros_surface(base_cache)
+    return qbminus
+end
+
+function heatermodel!(σ,T,t,fr::AreaRegionCache,phys_params)
+    σ .= phys_params[&quot;areaheater_power&quot;] / phys_params[&quot;areaheater_area&quot;] / phys_params[&quot;flux_correction&quot;]
+end
+
+function condensermodel!(σ,T,t,fr::AreaRegionCache,phys_params)
+    T0 = phys_params[&quot;areaheater_temp&quot;]
+    h = phys_params[&quot;areaheater_coeff&quot;]
+    corr = phys_params[&quot;flux_correction&quot;]
+
+    σ .= h*(T0 - T) / corr
+end
+
+function ohpmodel!(σ,T,t,fr::LineRegionCache,phys_params)
+    σ .= phys_params[&quot;ohp_flux&quot;] ./ phys_params[&quot;flux_correction&quot;]
+end
+
+timestep_fixed(u,sys) = tstep</code></pre><p>Check that the result file exists, then load the saved simulation result.</p><pre><code class="language-julia hljs">if !isfile(read_path)
+    error(&quot;No sample result found at $read_path. Run `GROUP=Notebooks julia --project=test test/runtests.jl` after generating `OHP simulation.jl`, or run `test/literate/OHP simulation.jl` first.&quot;)
+end
+
+SimuResult = load(read_path)[&quot;SimulationResult&quot;];</code></pre><p>Extract the saved tube time points. These times are reused by the animations and 1D property plots.</p><pre><code class="language-julia hljs">t = SimuResult.tube_hist_t;</code></pre><h1 id="Plot-2D-Graphs"><a class="docs-heading-anchor" href="#Plot-2D-Graphs">Plot 2D Graphs</a><a id="Plot-2D-Graphs-1"></a><a class="docs-heading-anchor-permalink" href="#Plot-2D-Graphs" title="Permalink"></a></h1><p>Animate the vapor film and liquid slug distribution through the OHP tube.</p><pre><code class="language-julia hljs">@gif for i in eachindex(t)
+    plot(OHPSlug(),i,SimuResult)
+end</code></pre><p>Animate the plate temperature field. The color limits are fixed so that frames can be compared directly.</p><pre><code class="language-julia hljs">@gif for i in eachindex(t)
+    plot(OHPTemp(),i,SimuResult,clim=(291.2,294.0))
+end</code></pre><p>Animate the 2D superheat field on the plate.</p><pre><code class="language-julia hljs">@gif for i in eachindex(t)
+    plot(OHPSuper(),i,SimuResult)
+end</code></pre><p>Animate the 2D pressure field.</p><pre><code class="language-julia hljs">@gif for i in eachindex(t)
+    plot(OHPPres(),i,SimuResult)
+end</code></pre><h1 id="Plot-2D-Interpolated-Curves"><a class="docs-heading-anchor" href="#Plot-2D-Interpolated-Curves">Plot 2D Interpolated Curves</a><a id="Plot-2D-Interpolated-Curves-1"></a><a class="docs-heading-anchor-permalink" href="#Plot-2D-Interpolated-Curves" title="Permalink"></a></h1><p>Place virtual sensors on the plate at the same physical locations used by the experiment.</p><pre><code class="language-julia hljs">x2Dsensors = [-2.75,-1.4,-0.8,0.0,0.0,0.8,1.4,2.75] .* INCHES
+y2Dsensors = [0.0,   0.0, 0.0,0.0,0.4,0.0,0.0,0.0] .* INCHES
+plate_sensors = (x2Dsensors,y2Dsensors);</code></pre><p>Interpolate the simulated plate temperature history at those virtual sensor locations.</p><pre><code class="language-julia hljs">t_hist,g_hist = getTcurve(plate_sensors,SimuResult);</code></pre><p>Read the ASETS-II experimental RTD data when it is available. If the file is missing or cannot be   parsed, the notebook continues with numerical results only.</p><pre><code class="language-julia hljs">expfile = expfileDict[&quot;O002_H001_P040&quot;]
+exppaths = (
+    joinpath(&quot;expdata&quot;, expfile),
+    joinpath(&quot;..&quot;, &quot;expdata&quot;, expfile),
+)
+expfile_index = findfirst(isfile, exppaths)
+
+expdata_available = expfile_index !== nothing
+if expdata_available
+    try
+        xf = XLSX.readxlsx(exppaths[expfile_index])
+        Onum, Hnum, power_exp = getconfig(expfile)
+        RTDt,RTD = getRTD(xf,Onum);
+    catch err
+        @warn &quot;Could not read experimental file $expfile. Plotting numerical post-processing results only.&quot; error=typeof(err)
+        expdata_available = false
+    end
+else
+    @info &quot;Experimental file $expfile not found. Plotting numerical post-processing results only.&quot;
+end</code></pre><p>Plot the OHP layout and mark the selected plate sensors.</p><pre><code class="language-julia hljs">RTD_for_plotting = [1,4,8];
+
+plot(OHP(),SimuResult)
+scatter!(x2Dsensors[RTD_for_plotting],y2Dsensors[RTD_for_plotting])
+annotate!(x2Dsensors[RTD_for_plotting], y2Dsensors[RTD_for_plotting].-0.005, RTD_for_plotting)</code></pre><p>Plot the simulated temperature curves at the selected sensors and overlay experimental curves when   the RTD data was loaded successfully.</p><pre><code class="language-julia hljs">plot(OHPTcurve(),RTD_for_plotting,(t_hist,g_hist),SimuResult)
+if expdata_available
+    plot!(OHPTexp() ,RTD_for_plotting,(RTDt,RTD)     ,SimuResult)
+end</code></pre><p>Estimate thermal conductance between one hot sensor and one cold sensor.</p><pre><code class="language-julia hljs">ihot = 4 # hot sensor for calculating thermal conductance
+icold = 8 # cold sensor for calculating thermal conductance;
+
+if expdata_available
+    plot(OHPCond(),(ihot,icold),(t_hist,g_hist),(RTDt,RTD),SimuResult)
+else
+    plot(OHPCond(),(ihot,icold),(t_hist,g_hist),SimuResult)
+end</code></pre><p>Plot liquid slug velocity statistics over the simulation.</p><pre><code class="language-julia hljs">plot(OHPV(), SimuResult::SimulationResult,ylimit=(-2,2))</code></pre><h1 id="Plot-1D-Interpolated-Curves"><a class="docs-heading-anchor" href="#Plot-1D-Interpolated-Curves">Plot 1D Interpolated Curves</a><a id="Plot-1D-Interpolated-Curves-1"></a><a class="docs-heading-anchor-permalink" href="#Plot-1D-Interpolated-Curves" title="Permalink"></a></h1><p>Choose one saved time index and plot the 1D fluid temperature together with the tube wall temperature.</p><pre><code class="language-julia hljs">iplot = 1
+plot(OHP1DT(),iplot,SimuResult,xlim=(1,2))
+plot!(twinx(),OHPTwall(),iplot,SimuResult,xlim=(1,2))
+# plot!(twinx(),OHP1DΔT(),iplot,SimuResult,xlim=(1,2))
+# plot!(twinx(),OHP1DP(),iplot,SimuResult,xlim=(1,2))</code></pre><p>Choose one 1D tube coordinate <code>ξ</code>, convert it to the 2D plate coordinates, and mark the corresponding   point on the OHP layout.</p><pre><code class="language-julia hljs">L = SimuResult.integrator_tube.p.tube.L
+ξ = L / 2
+plot(OHP(),SimuResult)
+xprobe,yprobe = oneDtwoDtransform(ξ,SimuResult)
+scatter!([xprobe],[yprobe])</code></pre><h1 id="Plot-1D-Property-Curves-For-Fixed-Location-Sensors"><a class="docs-heading-anchor" href="#Plot-1D-Property-Curves-For-Fixed-Location-Sensors">Plot 1D Property Curves For Fixed Location Sensors</a><a id="Plot-1D-Property-Curves-For-Fixed-Location-Sensors-1"></a><a class="docs-heading-anchor-permalink" href="#Plot-1D-Property-Curves-For-Fixed-Location-Sensors" title="Permalink"></a></h1><p>Choose several 1D tube coordinates and extract temperature and pressure histories at those locations.</p><pre><code class="language-julia hljs">xsensors1D = [2.097, 3.0, 4,4.1]
+
+θhist1D,phist1D = get1DTandP(xsensors1D, SimuResult);</code></pre><p>Plot the 1D temperature histories for the selected tube locations.</p><pre><code class="language-julia hljs">plot(t,θhist1D,label=string.(&quot;ξ=&quot;, xsensors1D&#39;),xlabel=&quot;time [s]&quot;, ylabel=&quot;temperature [K]&quot;)</code></pre><h1 id="Boiling-Statistics"><a class="docs-heading-anchor" href="#Boiling-Statistics">Boiling Statistics</a><a id="Boiling-Statistics-1"></a><a class="docs-heading-anchor-permalink" href="#Boiling-Statistics" title="Permalink"></a></h1><p>Build boiling-frequency data from the saved boiling history when boiling events were recorded.</p><pre><code class="language-julia hljs">if length(SimuResult.boil_hist) != 0
+    boil_data,boil_num_x,boil_num_t,t_boil,x2D_boil,y2D_boil,boil_dt = get_boil_matrix(SimuResult::SimulationResult);
+end</code></pre><p>Plot the spatial boiling frequency distribution on the OHP layout. If no boiling events were recorded,   this cell returns an empty plot.</p><pre><code class="language-julia hljs">plt = plot()
+if length(SimuResult.boil_hist) != 0
+    plt = plot(OHP(),SimuResult)
+    scatter!(x2D_boil,y2D_boil,
+        colorbar=true,markeralpha=delta.(boil_num_x),colorbar_title=&quot;\n boiling frequency [Hz]&quot;,right_margin=3Plots.mm,marker_z=boil_num_x./SimuResult.tube_hist_t[end],markerstrokewidth=0,markercolor=cgrad(:greys, rev = true))
+end
+plt</code></pre><p>Plot the overall boiling frequency as a function of time. If no boiling events were recorded, this cell   returns an empty plot.</p><pre><code class="language-julia hljs">plt = plot()
+if length(SimuResult.boil_hist) != 0
+    plt = plot(t_boil,boil_num_t./boil_dt,
+        color=:orange, legend=:topleft, ylabel=&quot;f [HZ]&quot;,xlabel=&quot;time [s]&quot;, label=&quot;overall boiling frequency&quot;)
+end
+plt</code></pre><hr/><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../OHP simulation/">« Simulation</a><a class="docs-footer-nextpage" href="../OHP DIY/">OHP-DIY »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.17.0 on <span class="colophon-date" title="Wednesday 10 June 2026 05:54">Wednesday 10 June 2026</span>. Using Julia version 1.11.9.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>

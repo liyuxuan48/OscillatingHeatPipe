@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>OHP-DIY · OscillatingHeatPipe</title><meta name="title" content="OHP-DIY · OscillatingHeatPipe"/><meta property="og:title" content="OHP-DIY · OscillatingHeatPipe"/><meta property="twitter:title" content="OHP-DIY · OscillatingHeatPipe"/><meta name="description" content="Documentation for OscillatingHeatPipe."/><meta property="og:description" content="Documentation for OscillatingHeatPipe."/><meta property="twitter:description" content="Documentation for OscillatingHeatPipe."/><script data-outdated-warner src="../../assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.050/juliamono.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.8/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../search_index.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-mocha.css" data-theme-name="catppuccin-mocha"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-macchiato.css" data-theme-name="catppuccin-macchiato"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-frappe.css" data-theme-name="catppuccin-frappe"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-latte.css" data-theme-name="catppuccin-latte"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><div class="docs-package-name"><span class="docs-autofit"><a href="../../">OscillatingHeatPipe</a></span></div><button class="docs-search-query input is-rounded is-small is-clickable my-2 mx-auto py-1 px-2" id="documenter-search-query">Search docs (Ctrl + /)</button><ul class="docs-menu"><li><a class="tocitem" href="../../">Home</a></li><li><a class="tocitem" href="../OHP simulation/">Simulation</a></li><li><a class="tocitem" href="../PostProcessing-oneresult/">Post-Processing</a></li><li class="is-active"><a class="tocitem" href>OHP-DIY</a><ul class="internal"><li class="toplevel"><a class="tocitem" href="#Packages"><span>Packages</span></a></li><li class="toplevel"><a class="tocitem" href="#Specify-Properties"><span>Specify Properties</span></a></li><li class="toplevel"><a class="tocitem" href="#Set-The-Geometry"><span>Set The Geometry</span></a></li><li class="toplevel"><a class="tocitem" href="#Set-Up-Heaters-And-Condensers"><span>Set Up Heaters And Condensers</span></a></li><li class="toplevel"><a class="tocitem" href="#Set-Up-The-OHP-Channel-Shape"><span>Set Up The OHP Channel Shape</span></a></li><li class="toplevel"><a class="tocitem" href="#Construct-The-Systems"><span>Construct The Systems</span></a></li><li class="toplevel"><a class="tocitem" href="#Initialize-The-Problem"><span>Initialize The Problem</span></a></li><li class="toplevel"><a class="tocitem" href="#Solve"><span>Solve</span></a></li><li class="toplevel"><a class="tocitem" href="#Store-Data"><span>Store Data</span></a></li></ul></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><a class="docs-sidebar-button docs-navbar-link fa-solid fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a><nav class="breadcrumb"><ul class="is-hidden-mobile"><li class="is-active"><a href>OHP-DIY</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>OHP-DIY</a></li></ul></nav><div class="docs-right"><a class="docs-navbar-link" href="https://github.com/liyuxuan48/OscillatingHeatPipe.jl" title="View the repository on GitHub"><span class="docs-icon fa-brands"></span><span class="docs-label is-hidden-touch">GitHub</span></a><a class="docs-navbar-link" href="https://github.com/liyuxuan48/OscillatingHeatPipe.jl/blob/main/docs/src/manual/OHP DIY.md" title="Edit source on GitHub"><span class="docs-icon fa-solid"></span></a><a class="docs-settings-button docs-navbar-link fa-solid fa-gear" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-article-toggle-button fa-solid fa-chevron-up" id="documenter-article-toggle-button" href="javascript:;" title="Collapse all docstrings"></a></div></header><article class="content" id="documenter-page"><h1 id="DIY-Geometry-And-Channel-Design"><a class="docs-heading-anchor" href="#DIY-Geometry-And-Channel-Design">DIY Geometry And Channel Design</a><a id="DIY-Geometry-And-Channel-Design-1"></a><a class="docs-heading-anchor-permalink" href="#DIY-Geometry-And-Channel-Design" title="Permalink"></a></h1><p>This notebook shows how to build a custom OHP setup by defining the plate   boundary, heater/condenser regions, and OHP channel path directly.</p><h3 id="What-do-we-need-to-customize-an-OHP-problem?"><a class="docs-heading-anchor" href="#What-do-we-need-to-customize-an-OHP-problem?">What do we need to customize an OHP problem?</a><a id="What-do-we-need-to-customize-an-OHP-problem?-1"></a><a class="docs-heading-anchor-permalink" href="#What-do-we-need-to-customize-an-OHP-problem?" title="Permalink"></a></h3><p><strong>specify properties</strong> : Solid property, fluid property, heater power, and   condenser strength</p><p><strong>set the geometries</strong> : A custom plate polygon, heater/condenser patches,   and an OHP channel path</p><p><strong>construct the systems</strong> : Fluid system (1D) and heat-conduction system   (2D)</p><p><strong>initialize</strong> : Build the integrators and the data structure for saving</p><p><strong>solve</strong> : March the coupled tube and plate systems forward in time</p><p><strong>save/examine</strong> : Save the data and preview the custom result</p><h1 id="Packages"><a class="docs-heading-anchor" href="#Packages">Packages</a><a id="Packages-1"></a><a class="docs-heading-anchor-permalink" href="#Packages" title="Permalink"></a></h1><p>Load the OHP package and plotting/progress utilities used throughout the notebook.</p><pre><code class="language-julia hljs">using OscillatingHeatPipe # our main package
+using Plots # for plotting
+using ProgressMeter # to have a progress bar in the calculation
+using JLD2 # to save and load data</code></pre><h1 id="Specify-Properties"><a class="docs-heading-anchor" href="#Specify-Properties">Specify Properties</a><a id="Specify-Properties-1"></a><a class="docs-heading-anchor-permalink" href="#Specify-Properties" title="Permalink"></a></h1><h3 id="Solid-Physical-Parameters"><a class="docs-heading-anchor" href="#Solid-Physical-Parameters">Solid Physical Parameters</a><a id="Solid-Physical-Parameters-1"></a><a class="docs-heading-anchor-permalink" href="#Solid-Physical-Parameters" title="Permalink"></a></h3><p>Define aluminum plate material properties and compute the thermal diffusivity used by the immersed-layer heat-conduction model.</p><pre><code class="language-julia hljs">ρₛ = 2730; # material density [kg/m^3]
+cₛ  = 8.93e02; # material specific heat [J/kg K]
+kₛ  = 1.93e02; # material heat conductivity [W/m K]
+plate_d = 1.5e-3; # effective plate thickness [m]
+αₛ = kₛ/ρₛ/cₛ
+
+Tref = 291.2 # reference temperature [K]
+power = 4 # total heater power [W]</code></pre><h3 id="Fluid-Physical-Parameters"><a class="docs-heading-anchor" href="#Fluid-Physical-Parameters">Fluid Physical Parameters</a><a id="Fluid-Physical-Parameters-1"></a><a class="docs-heading-anchor-permalink" href="#Fluid-Physical-Parameters" title="Permalink"></a></h3><p>Set the working fluid and construct the saturation-property helper used by the one-dimensional tube model.</p><pre><code class="language-julia hljs">fluid_type = &quot;Butane&quot;
+p_fluid = SaturationFluidProperty(fluid_type,Tref)</code></pre><h1 id="Set-The-Geometry"><a class="docs-heading-anchor" href="#Set-The-Geometry">Set The Geometry</a><a id="Set-The-Geometry-1"></a><a class="docs-heading-anchor-permalink" href="#Set-The-Geometry" title="Permalink"></a></h1><h3 id="Grid-And-Plate-Boundary"><a class="docs-heading-anchor" href="#Grid-And-Plate-Boundary">Grid And Plate Boundary</a><a id="Grid-And-Plate-Boundary-1"></a><a class="docs-heading-anchor-permalink" href="#Grid-And-Plate-Boundary" title="Permalink"></a></h3><p>Create a slightly oversized computational grid and a deliberately irregular polygonal plate that still encloses the heaters, condensers, and tilted OHP channel.</p><pre><code class="language-julia hljs">Δx = 0.0007 # [m]
+Lx = 6.0INCHES
+Ly = 2.2INCHES
+xlim = (-0.68Lx,0.68Lx)
+ylim = (-1.08Ly,0.86Ly)
+
+g = PhysicalGrid(1.04 .* xlim,1.08 .* ylim,Δx)
+Δs = 1.4*cellsize(g)
+
+xbound = [
+    -0.62Lx, -0.67Lx, -0.56Lx, -0.20Lx,
+     0.10Lx,  0.45Lx,  0.66Lx,  0.61Lx,
+     0.32Lx, -0.05Lx, -0.42Lx
+]
+ybound = [
+     0.52Ly, -0.08Ly, -0.84Ly, -1.00Ly,
+    -0.64Ly, -0.90Ly, -0.32Ly,  0.48Ly,
+     0.76Ly,  0.62Ly,  0.70Ly
+]
+body = Polygon(xbound,ybound,Δs)</code></pre><p>Create a stationary rigid-body motion object for the irregular plate boundary.</p><pre><code class="language-julia hljs">X = MotionTransform([0,0],0)
+joint = Joint(X)
+m = RigidBodyMotion(joint,body)
+x_motion = zero_motion_state(body,m)
+update_body!(body,x_motion,m)</code></pre><p>Define zero-flux boundary-condition functions for the exterior and interior immersed boundaries.</p><pre><code class="language-julia hljs">function get_qbplus(t,x,base_cache,phys_params,motions)
+    qbplus = zeros_surface(base_cache)
+    return qbplus
+end
+
+function get_qbminus(t,x,base_cache,phys_params,motions)
+    qbminus = zeros_surface(base_cache)
+    return qbminus
+end
+
+bcdict = Dict(&quot;exterior&quot; =&gt; get_qbplus,&quot;interior&quot; =&gt; get_qbminus)</code></pre><h1 id="Set-Up-Heaters-And-Condensers"><a class="docs-heading-anchor" href="#Set-Up-Heaters-And-Condensers">Set Up Heaters And Condensers</a><a id="Set-Up-Heaters-And-Condensers-1"></a><a class="docs-heading-anchor-permalink" href="#Set-Up-Heaters-And-Condensers" title="Permalink"></a></h1><p>Collect the physical parameters passed into the heat-conduction system, including the total heater area and condenser coefficient.</p><pre><code class="language-julia hljs">heater_size = (0.62INCHES,0.48INCHES)
+areaheater_area = prod(heater_size)
+
+phys_params = Dict( &quot;diffusivity&quot;              =&gt; αₛ,
+                    &quot;flux_correction&quot;          =&gt; ρₛ*cₛ*plate_d,
+                    &quot;Fourier&quot;                  =&gt; 1.0,
+                    &quot;ohp_flux&quot;                 =&gt; [NaN],
+                    &quot;areaheater_power&quot;         =&gt; power,
+                    &quot;areaheater_area&quot;          =&gt; areaheater_area,
+                    &quot;areaheater_temp&quot;          =&gt; 0.0,
+                    &quot;areaheater_coeff&quot;         =&gt; 3600.0,
+                    &quot;background temperature&quot;   =&gt; Tref
+                     )</code></pre><p>Define the area-source models for heater input and condenser cooling.</p><pre><code class="language-julia hljs">function heatermodel!(σ,T,t,fr::AreaRegionCache,phys_params)
+    σ .= phys_params[&quot;areaheater_power&quot;] / phys_params[&quot;areaheater_area&quot;] / phys_params[&quot;flux_correction&quot;]
+end
+
+function condensermodel!(σ,T,t,fr::AreaRegionCache,phys_params)
+    T0 = phys_params[&quot;areaheater_temp&quot;]
+    h = phys_params[&quot;areaheater_coeff&quot;]
+    corr = phys_params[&quot;flux_correction&quot;]
+
+    σ .= h*(T0 - T) / corr
+end</code></pre><p>Create one tilted heater patch and place it in the lower-left part of the irregular plate.</p><pre><code class="language-julia hljs">heater_body = Rectangle(heater_size[1],heater_size[2],1.4*Δx)
+heater_transform = RigidTransform((0.38INCHES,-0.30INCHES),π/10)
+heater = AreaForcingModel(heater_body,heater_transform,heatermodel!)</code></pre><p>Create one tilted condenser patch on the opposite side of the plate.</p><pre><code class="language-julia hljs">condenser_body = Rectangle(0.36INCHES,1.02INCHES,1.4*Δx)
+condenser_transform = RigidTransform((1.95INCHES,0.05INCHES),π/10)
+condenser = AreaForcingModel(condenser_body,condenser_transform,condensermodel!)</code></pre><h1 id="Set-Up-The-OHP-Channel-Shape"><a class="docs-heading-anchor" href="#Set-Up-The-OHP-Channel-Shape">Set Up The OHP Channel Shape</a><a id="Set-Up-The-OHP-Channel-Shape-1"></a><a class="docs-heading-anchor-permalink" href="#Set-Up-The-OHP-Channel-Shape" title="Permalink"></a></h1><p>First, build a fully custom curve from arrays. This is a quick way to sketch an unusual channel before choosing the final simulation path.</p><pre><code class="language-julia hljs">a = 0.018
+θ = 0:2π/800:2π
+r = a .* (1 .+ 0.28cos.(5θ)) .* sin.(2θ)
+x = r .* cos.(θ)
+y = 0.72r .* sin.(θ)
+
+plot(x,y,aspectratio=1)</code></pre><p>Next, use the built-in multi-turn generator, but tilt the channel so it sits diagonally inside the strange polygonal plate.</p><pre><code class="language-julia hljs">ds = 1.5Δx
+nturn = 7
+width_ohp = 38e-3
+length_ohp = 125e-3
+gap = 3.2e-3
+pitch = width_ohp/(2*nturn+1)
+rotation_angle = -5π/9
+x0, y0 = length_ohp/2 - 4e-3, width_ohp/2 - 5e-2
+
+x,y, xf, yf = construct_ohp_curve(nturn,pitch,length_ohp,gap,ds,x0,y0,false,true,rotation_angle)
+
+plot(x,y,aspectratio=1)</code></pre><p>Convert the generated coordinates into a BasicBody and shift the tilted channel slightly off center.</p><pre><code class="language-julia hljs">ohp = BasicBody(x,y)
+tr_ohp = RigidTransform((-0.10INCHES,0.05INCHES),0.0)</code></pre><p>Define the line-source model that injects the tube-to-plate heat flux into the solid problem.</p><pre><code class="language-julia hljs">function ohpmodel!(σ,T,t,fr::LineRegionCache,phys_params)
+    σ .= phys_params[&quot;ohp_flux&quot;] ./ phys_params[&quot;flux_correction&quot;]
+end
+ohp_linesource = LineForcingModel(ohp,tr_ohp,ohpmodel!)</code></pre><h3 id="Plot-The-Full-Custom-Layout"><a class="docs-heading-anchor" href="#Plot-The-Full-Custom-Layout">Plot The Full Custom Layout</a><a id="Plot-The-Full-Custom-Layout-1"></a><a class="docs-heading-anchor-permalink" href="#Plot-The-Full-Custom-Layout" title="Permalink"></a></h3><p>Plot the irregular plate, heater, condenser, and tilted OHP channel together for visual inspection.</p><pre><code class="language-julia hljs">plot(body,fillalpha=0)
+update_body!(heater_body,heater_transform)
+update_body!(condenser_body,condenser_transform)
+plot!(heater_body,fillcolor=:red,fillalpha=0.5)
+plot!(condenser_body,fillcolor=:blue,fillalpha=0.5)
+update_body!(ohp,tr_ohp)
+plot!(ohp,fillalpha=0,closedornot=true)</code></pre><p>Assemble all thermal forcing models into the dictionary expected by the heat-conduction problem.</p><pre><code class="language-julia hljs">forcing_dict = Dict(&quot;heating models&quot; =&gt; [heater,condenser,ohp_linesource])</code></pre><h1 id="Construct-The-Systems"><a class="docs-heading-anchor" href="#Construct-The-Systems">Construct The Systems</a><a id="Construct-The-Systems-1"></a><a class="docs-heading-anchor-permalink" href="#Construct-The-Systems" title="Permalink"></a></h1><p>Set the coupled time-step size and define the fixed time-step callback used by the plate solver.</p><pre><code class="language-julia hljs">tstep = 4e-4
+timestep_fixed(u,sys) = tstep</code></pre><p>Construct the Neumann heat-conduction problem using the custom geometry, boundary conditions, and forcing models.</p><pre><code class="language-julia hljs">prob = NeumannHeatConductionProblem(g,body,phys_params=phys_params,
+                                           bc=bcdict,
+                                           motions=m,
+                                           forcing=forcing_dict,
+                                           timestep_func=timestep_fixed)</code></pre><p>Build the concrete two-dimensional plate system.</p><pre><code class="language-julia hljs">sys_plate = construct_system(prob)</code></pre><p>Initialize the one-dimensional OHP tube system using the custom plate system.</p><pre><code class="language-julia hljs">sys_tube = initialize_ohpsys(sys_plate,p_fluid,power)</code></pre><h1 id="Initialize-The-Problem"><a class="docs-heading-anchor" href="#Initialize-The-Problem">Initialize The Problem</a><a id="Initialize-The-Problem-1"></a><a class="docs-heading-anchor-permalink" href="#Initialize-The-Problem" title="Permalink"></a></h1><p>Create initial states and ODE integrators for the plate and tube systems.</p><pre><code class="language-julia hljs">tspan = (0.0,0.2)
+dt_record = 0.01
+
+tspan_init = (0.0,1e4)
+u_plate = init_sol(sys_plate)
+integrator_plate = init(u_plate,tspan_init,sys_plate,save_on=false)
+
+u_tube = newstate(sys_tube)
+integrator_tube = init(u_tube,tspan,sys_tube)</code></pre><p>Create the SimulationResult container that stores snapshots for plotting and post-processing.</p><pre><code class="language-julia hljs">SimuResult = SimulationResult(integrator_tube,integrator_plate)</code></pre><h1 id="Solve"><a class="docs-heading-anchor" href="#Solve">Solve</a><a id="Solve-1"></a><a class="docs-heading-anchor-permalink" href="#Solve" title="Permalink"></a></h1><p>Advance the coupled tube and plate systems in time and store snapshots at the requested interval.</p><pre><code class="language-julia hljs">@showprogress for t in tspan[1]:tstep:tspan[2]
+
+    timemarching!(integrator_tube,integrator_plate,tstep)
+
+    if (mod(integrator_plate.t,dt_record) &lt; 1e-6) || (mod(-integrator_plate.t,dt_record) &lt; 1e-6)
+        store!(SimuResult,integrator_tube,integrator_plate)
+    end
+
+end</code></pre><h1 id="Store-Data"><a class="docs-heading-anchor" href="#Store-Data">Store Data</a><a id="Store-Data-1"></a><a class="docs-heading-anchor-permalink" href="#Store-Data" title="Permalink"></a></h1><p>Save the custom-geometry simulation result for later inspection.</p><pre><code class="language-julia hljs">save_path = &quot;../numedata/DIY.jld2&quot;
+save(save_path,&quot;SimulationResult&quot;,SimuResult)</code></pre><h3 id="Preview-The-Solution"><a class="docs-heading-anchor" href="#Preview-The-Solution">Preview The Solution</a><a id="Preview-The-Solution-1"></a><a class="docs-heading-anchor-permalink" href="#Preview-The-Solution" title="Permalink"></a></h3><p>Generate an animation of plate temperature over time with the strange polygon boundary overlaid.</p><pre><code class="language-julia hljs">@gif for i in eachindex(SimuResult.tube_hist_t)
+    plot(OHPTemp(),i,SimuResult,clim=(291.2,294.0))
+    plot!(body,fillalpha=0)
+end</code></pre><p>Generate an animation of the slug distribution over time with the tilted OHP channel and plate boundary overlaid.</p><pre><code class="language-julia hljs">@gif for i in eachindex(SimuResult.tube_hist_t)
+    plot(OHPSlug(),i,SimuResult,aspectratio=1)
+    plot!(body,fillalpha=0)
+end</code></pre><hr/><p><em>This page was generated using <a href="https://github.com/fredrikekre/Literate.jl">Literate.jl</a>.</em></p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../PostProcessing-oneresult/">« Post-Processing</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.17.0 on <span class="colophon-date" title="Wednesday 10 June 2026 05:54">Wednesday 10 June 2026</span>. Using Julia version 1.11.9.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
