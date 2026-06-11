@@ -35,6 +35,15 @@ notebookdir = "../examples"
 docdir = "../docs/src/manual"
 litdir = "./literate"
 
+function use_stable_literate_sandbox!()
+  @eval Literate function sandbox()
+      m = Core.eval(Main, :(module NotebookSandbox end))
+      Core.eval(m, :(eval(x) = Core.eval($m, x)))
+      Core.eval(m, :(include(x) = Base.include($m, x)))
+      return m
+  end
+end
+
 if GROUP == "All" || GROUP == "Auxiliary"
     include("thermomodel.jl")
     include("correlations.jl")
@@ -55,18 +64,19 @@ end
 
 
 if GROUP == "Notebooks"
+  use_stable_literate_sandbox!()
   for (root, dirs, files) in walkdir(litdir)
-    for file in files
-      endswith(file,".jl") && startswith(file,"OHP DIY.jl") && Literate.notebook(joinpath(root, file),notebookdir)
-      #endswith(file,".jl") && Literate.notebook(joinpath(root, file),notebookdir)
+    for file in sort(files)
+      # endswith(file,".jl") && startswith(file,"OHP DIY.jl") && Literate.notebook(joinpath(root, file),notebookdir)
+      endswith(file,".jl") && Literate.notebook(joinpath(root, file),notebookdir; execute=true)
     end
   end
 end
 
 if GROUP == "Documentation"
   for (root, dirs, files) in walkdir(litdir)
-    for file in files
-      endswith(file,".jl") && Literate.markdown(joinpath(root, file),docdir)
+    for file in sort(files)
+      endswith(file,".jl") && Literate.markdown(joinpath(root, file),docdir; execute=false, flavor=Literate.CommonMarkFlavor())
     end
   end
 end

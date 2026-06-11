@@ -1,4 +1,4 @@
-import Plots: mm,palette
+import Plots: mm,palette,text
 
 export OHP,OHPTemp,OHPSlug,OHPPres,OHPSuper,OHP2DΔT,OHPTexp,OHPTcurve,OHPCond,OHPV,OHP1DT,OHP1DP,OHP1DΔT,OHPTwall
 
@@ -21,6 +21,37 @@ mutable struct OHP1DΔT end
 mutable struct OHPTwall end
 
 # mutable struct OHP end
+
+function _top_annotation_layout(grid::PhysicalGrid; margin_fraction=0.18)
+    xlim = grid.xlim[1]
+    ylim = grid.xlim[2]
+    xmin, xmax = xlim
+    ymin, ymax = ylim
+    xrange = xmax - xmin
+    yrange = ymax - ymin
+    top_margin = margin_fraction * yrange
+    y_text = ymax + 0.55top_margin
+    y_marker = ymax + 0.25top_margin
+    ylimit = (ymin, ymax + top_margin)
+
+    xlim, ylimit, xmin, xmax, y_text, y_marker, xrange
+end
+
+function _vertical_annotation_layout(grid::PhysicalGrid; top_fraction=0.18, bottom_fraction=0.18)
+    xlim = grid.xlim[1]
+    ylim = grid.xlim[2]
+    xmin, xmax = xlim
+    ymin, ymax = ylim
+    xrange = xmax - xmin
+    yrange = ymax - ymin
+    top_margin = top_fraction * yrange
+    bottom_margin = bottom_fraction * yrange
+    y_top_text = ymax + 0.55top_margin
+    y_bottom_marker = ymin - 0.45bottom_margin
+    ylimit = (ymin - bottom_margin, ymax + top_margin)
+
+    xlim, ylimit, xmin, xmax, y_top_text, y_bottom_marker, xrange
+end
 
 @recipe function f(::OHP, SimuResult::SimulationResult)
     grid = SimuResult.integrator_plate.p.base_cache.g
@@ -62,21 +93,23 @@ end
 @recipe function f(::OHPTemp, plate_T::Nodes, grid::PhysicalGrid; time =:none, minimal=false)
 
     seriestype --> :heatmap
+    xlim_plot, ylim_plot, xmin, xmax, y_text, y_marker, xrange = _top_annotation_layout(grid)
 
     if minimal == false
         xlabel --> "x [m]"
         ylabel --> "y [m]"
         legend --> true
+        framestyle := :none
         
-        xlimit --> grid.xlim[1]
-        ylimit --> grid.xlim[2]
+        xlimit --> xlim_plot
+        ylimit --> ylim_plot
         
         colorbar_title --> "\n T[K]"
         right_margin --> 5mm
 
             if time != :none
             # @series begin
-            annotation --> [(0.0, 0.04, string("Time = ", round(time, digits=2), "[s]"))]
+            annotation --> [((xmin + xmax)/2, y_text, string("Time = ", round(time, digits=2), "[s]"))]
             # end
             end
     else
@@ -89,8 +122,6 @@ end
 end
 
 @recipe function f(::OHPSlug, i::Int64, SimuResult::SimulationResult; plain=false)
-    adjust = 1e-2;
-    
     tube_sys = getcurrentsys(SimuResult,i)
     closedornot := tube_sys.tube.closedornot
     
@@ -104,6 +135,11 @@ end
 
     ohp_model = SimuResult.integrator_plate.p.forcing["heating models"][end]
     ohp = ohp_model.transform(ohp_model.shape)
+    xlim_plot, ylim_plot, xmin, xmax, y_text, y_marker, xrange = _vertical_annotation_layout(grid; top_fraction=0.18, bottom_fraction=0.20)
+    x_dry = xmin + 0.10xrange
+    x_film = xmin + 0.34xrange
+    x_liquid = xmin + 0.72xrange
+    legend_text_offset = 0.03xrange
     
     # seriestype --> :heatmap
     xlabel --> "x [m]"
@@ -118,34 +154,36 @@ end
 
     # legend --> true
     
-    xlimit --> grid.xlim[1]
-    ylimit --> grid.xlim[2]
+    xlimit --> xlim_plot
+    ylimit --> ylim_plot
 
     if plain == false
 
-        annotation := [(-0.052+adjust, -0.028, "Dry vapor"),(-0.01+0.007+adjust, -0.028, "Vapor with film"),
-        (0.04+0.002+adjust, -0.028, "Liquid"),(0.0, 0.03, string("Time = ", round(tube_hist_t[i], digits=4), "[s]"))]
+        annotation := [(x_dry + legend_text_offset, y_marker, text("Dry vapor", :left)),
+        (x_film + legend_text_offset, y_marker, text("Vapor with film", :left)),
+        (x_liquid + legend_text_offset, y_marker, text("Liquid", :left)),
+        ((xmin + xmax)/2, y_text, string("Time = ", round(tube_hist_t[i], digits=4), "[s]"))]
 
         @series begin
             # annotation := (0, 0, "Look up!")
             seriestype := :scatter
             color := :red
-            [-0.07+adjust],[-0.028]
+            [x_dry],[y_marker]
         end
 
         @series begin
             seriestype := :scatter
             color := :yellow
-            [-0.03+adjust],[-0.028]
+            [x_film],[y_marker]
         end
 
         @series begin
             seriestype := :scatter
             color := :blue
-            [0.03+adjust],[-0.028]
+            [x_liquid],[y_marker]
         end
     else
-        annotation := [(0.0, 0.03, string("Time = ", round(tube_hist_t[i], digits=4), "[s]"))]
+        annotation := [((xmin + xmax)/2, y_text, string("Time = ", round(tube_hist_t[i], digits=4), "[s]"))]
     end
     
     ohp
@@ -168,6 +206,7 @@ end
     ohp = ohp_model.transform(ohp_model.shape)
     
     # seriestype --> :heatmap
+    aspectratio --> 1
     xlabel --> "x [m]"
     ylabel --> "y [m]"
     fillalpha := 0
@@ -247,6 +286,7 @@ end
     ohp = ohp_model.transform(ohp_model.shape)
     
     # seriestype --> :heatmap
+    aspectratio --> 1
     xlabel --> "x [m]"
     ylabel --> "y [m]"
     fillalpha := 0
