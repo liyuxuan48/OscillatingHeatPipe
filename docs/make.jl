@@ -18,7 +18,7 @@ makedocs(
 if get(ENV, "CI", "false") == "true"
     deploydocs(
         repo = "github.com/liyuxuan48/OscillatingHeatPipe.jl.git",
-        devbranch = "lyx-readme",
+        devbranch = "main",
         target = "build",
         deps = nothing,
         make = nothing,
