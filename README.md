@@ -1,5 +1,9 @@
 # OscillatingHeatPipe.jl
 
+![Oscillating heat pipe animation](animation.gif)
+
+In the animation, the red region marks the heater and the blue region marks the cooler/condenser.
+
 [![Build Status](https://github.com/liyuxuan48/OscillatingHeatPipe.jl/workflows/CI/badge.svg)](https://github.com/liyuxuan48/OscillatingHeatPipe.jl/actions)
 [![Coverage](https://codecov.io/gh/liyuxuan48/OscillatingHeatPipe.jl/branch/main/graph/badge.svg)](https://codecov.io/gh/liyuxuan48/OscillatingHeatPipe.jl)
 [![Docs](https://img.shields.io/badge/docs-dev-blue.svg)](https://liyuxuan48.github.io/OscillatingHeatPipe.jl)
@@ -93,3 +97,12 @@ Open each notebook and run all cells (menu: **Run ▸ Run All Cells**).
 
 That's the whole workflow. Edit the parameters in `OHP simulation.ipynb`, re-run it, then re-run
 `PostProcessing-oneresult.ipynb` to see the effect.
+
+## Citation
+
+If you use this package, please cite the associated paper:
+
+Li, Y., Eldredge, J. D., Lavine, A. S., Fisher, T. S., & Drolen, B. L. (2024).
+A conjugate heat transfer model of oscillating heat pipe dynamics, performance, and dryout.
+*International Journal of Heat and Mass Transfer, 227*, 125530.
+[https://doi.org/10.1016/j.ijheatmasstransfer.2024.125530](https://doi.org/10.1016/j.ijheatmasstransfer.2024.125530)

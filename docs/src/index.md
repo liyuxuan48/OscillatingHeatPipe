@@ -1,5 +1,9 @@
 # OscillatingHeatPipe.jl
 
+![Oscillating heat pipe animation](https://raw.githubusercontent.com/liyuxuan48/OscillatingHeatPipe.jl/main/animation.gif)
+
+In the animation, the red region marks the heater and the blue region marks the cooler/condenser.
+
 `OscillatingHeatPipe.jl` simulates an oscillating heat pipe (OHP) coupled to a two-dimensional
 heat-conduction plate. It provides tools for defining OHP channels, heaters, and condensers,
 initializing the tube and plate systems, time-marching the coupled problem, saving results, and
