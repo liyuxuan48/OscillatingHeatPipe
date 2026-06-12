@@ -130,7 +130,7 @@ end
 function getconfig(filepath)
     Pindex = findfirst("_P0",filepath)[2]
     Oindex = findfirst("_O0",filepath)[2]
-    Hindex = findfirst("_O0",filepath)[2]
+    Hindex = findfirst("_H0",filepath)[2]
     power = parse(Int64,filepath[Pindex+1:Pindex+3])
     Onum = parse(Int64,filepath[Oindex+1:Oindex+3])
     Hnum = parse(Int64,filepath[Hindex+1:Hindex+3])

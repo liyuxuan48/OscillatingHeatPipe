@@ -114,14 +114,13 @@ expfile_index = findfirst(isfile, exppaths)
 
 expdata_available = expfile_index !== nothing
 if expdata_available
-    try
-        xf = XLSX.readxlsx(exppaths[expfile_index])
-        Onum, Hnum, power_exp = getconfig(expfile)
-        RTDt,RTD = getRTD(xf,Onum);
-    catch err
-        @warn "Could not read experimental file $expfile. Plotting numerical post-processing results only." error=typeof(err)
-        expdata_available = false
-    end
+    ## This ASETS-II workbook uses strict OOXML. XLSX.jl can convert strict files while reading,
+    ## but this strict custom XML relationship is missing from its built-in mapping.
+    XLSX.STRICT_TO_TRANSITIONAL["http://purl.oclc.org/ooxml/officeDocument/relationships/customXml"] =
+        "http://schemas.openxmlformats.org/officeDocument/2006/relationships/customXml"
+    xf = XLSX.readxlsx(exppaths[expfile_index])
+    Onum, Hnum, power_exp = getconfig(expfile)
+    RTDt,RTD = getRTD(xf,Onum);
 else
     @info "Experimental file $expfile not found. Plotting numerical post-processing results only."
 end
