@@ -1,9 +1,5 @@
 # OscillatingHeatPipe.jl
 
-![Oscillating heat pipe animation](animation.gif)
-
-In the animation, the red region marks the heater and the blue region marks the cooler/condenser.
-
 [![Build Status](https://github.com/liyuxuan48/OscillatingHeatPipe.jl/workflows/CI/badge.svg)](https://github.com/liyuxuan48/OscillatingHeatPipe.jl/actions)
 [![Coverage](https://codecov.io/gh/liyuxuan48/OscillatingHeatPipe.jl/branch/main/graph/badge.svg)](https://codecov.io/gh/liyuxuan48/OscillatingHeatPipe.jl)
 [![Docs](https://img.shields.io/badge/docs-dev-blue.svg)](https://liyuxuan48.github.io/OscillatingHeatPipe.jl)
@@ -12,6 +8,10 @@ In the animation, the red region marks the heater and the blue region marks the 
 heat-conduction plate. It provides tools for defining OHP channels, heaters, and condensers,
 initializing the tube and plate systems, time-marching the coupled problem, saving results, and
 post-processing temperatures, pressure, slug motion, and boiling statistics.
+
+![Oscillating heat pipe animation](animation.gif)
+
+In the animation, the red region marks the heater and the blue region marks the cooler/condenser.
 
 The fastest way to learn the package is to run the three example notebooks in Jupyter, in order.
 This README is a copy-paste workflow that takes you from nothing to a working simulation.
