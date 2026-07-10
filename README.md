@@ -106,3 +106,5 @@ Li, Y., Eldredge, J. D., Lavine, A. S., Fisher, T. S., & Drolen, B. L. (2024).
 A conjugate heat transfer model of oscillating heat pipe dynamics, performance, and dryout.
 *International Journal of Heat and Mass Transfer, 227*, 125530.
 [https://doi.org/10.1016/j.ijheatmasstransfer.2024.125530](https://doi.org/10.1016/j.ijheatmasstransfer.2024.125530)
+
+Please also cite the associated erratum, which documents corrections reflected in this implementation.
