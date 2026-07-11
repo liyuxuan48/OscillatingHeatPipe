@@ -639,7 +639,7 @@ end
 
     tspan = (0.0, 1.0); # start time and end time
     dt_record = 1.0   # saving time interval
-    # tstep = 2e-3     # actrual time marching step
+    tstep = 4e-4 # one-step mass-conservation check
 
     ηplusvalue = 0.5
     ηminusvalue = 0.0
@@ -658,7 +658,8 @@ end
         elseif casei == 2
             sys_tube.liquid.dXdt[1:numofslugs] = [zero.(X) .- 1 for X in sys_tube.liquid.dXdt[1:numofslugs]]# initial velocity of the slugs
             sys_tube.vapor.P .= fill(sys_tube.propconvert.TtoP(Tref - 5.0),numofslugs)
-            sys_tube.vapor.Lfilm_start .= 1e-1 * sys_tube.wall.L_newbubble
+            Lvaporplug = XptoLvaporplug(sys_tube.liquid.Xp,sys_tube.tube.L,sys_tube.tube.closedornot)
+            sys_tube.vapor.Lfilm_start .= Lvaporplug ./ 2
             sys_tube.vapor.Lfilm_end .= 1e-1 * sys_tube.wall.L_newbubble
         elseif casei == 3
             sys_tube.liquid.dXdt[1:numofslugs] = [zero.(X) .- 1 for X in sys_tube.liquid.dXdt[1:numofslugs]]# initial velocity of the slugs
@@ -711,7 +712,7 @@ end
 
         println(1-Mnew/Mold)
 
-        @test isapprox.(Mold,Mnew,rtol=2e-7)
+        @test isapprox.(Mold,Mnew,rtol=1e-9)
     end
 
 end
