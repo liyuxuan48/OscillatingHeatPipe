@@ -241,16 +241,14 @@ function film_dynamics(ρₗ, Ac,d,δstart,δend,dMdt_latent_start,dMdt_latent_e
 
     # println(he_matrix_start)
     # println(he_matrix_end)
-    TESTING_SWTICH = 1
-    
     # for case 2, L is very small and the L and δ are frozen to avoid code crash, so the vapor velocity needs to be slightly differ from bulk velocity
     # to account for the mass flow rate caused by the 'frozen' liquid film (very short but still not zero) 's phase change
-    v_vapor_left_case2  = v_momentum_vapor_start .+ ((-dMdt_latent_start)  ./ (ρₗ .* Ac)) .* TESTING_SWTICH
-    v_vapor_right_case2 = v_momentum_vapor_end   .- ((-dMdt_latent_end)    ./ (ρₗ .* Ac)) .* TESTING_SWTICH
+    v_vapor_left_case2  = v_momentum_vapor_start .+ ((-dMdt_latent_start) ./ (ρₗ .* Ac))
+    v_vapor_right_case2 = v_momentum_vapor_end   .- ((-dMdt_latent_end)   ./ (ρₗ .* Ac))
 
     # for case 5, the liquid interface is essentially eating the other side's liquid film, so need to account for the mass flow rate contributed by that liquid film
-    v_vapor_left_case5  = v_momentum_vapor_start .+ v_momentum_vapor_start .* Aend   ./ (Ac .- Aend)   .+ (v_vapor_left_case2  .- v_momentum_vapor_start) .* TESTING_SWTICH
-    v_vapor_right_case5 = v_momentum_vapor_end   .+ v_momentum_vapor_end   .* Astart ./ (Ac .- Astart) .+ (v_vapor_right_case2 .- v_momentum_vapor_end)   .* TESTING_SWTICH
+    v_vapor_left_case5  = Ac ./ (Ac .- Aend)   .* v_vapor_left_case2
+    v_vapor_right_case5 = Ac ./ (Ac .- Astart) .* v_vapor_right_case2
 
     V_vapor_matrix_start = hcat(v_vapor_left_normal,v_vapor_left_case2,v_vapor_left_normal,v_vapor_left_normal,v_vapor_left_case5)'
     V_vapor_matrix_end   = hcat(v_vapor_right_normal,v_vapor_right_case2,v_vapor_right_normal,v_vapor_right_normal,v_vapor_right_case5)'
